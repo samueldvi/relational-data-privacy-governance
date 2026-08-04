@@ -79,3 +79,18 @@ L'inventario descrive la struttura, il profiling raccoglie evidenze aggregate,
 il registry applica regole contestuali e override, mentre la futura fase di
 masking consumerà `masking_rule` e `consistency_group` senza riclassificare i
 dati. I record `Dubbio` bloccano l'automazione fino alla revisione del data owner.
+
+## Regole e primitive di masking
+
+Le configurazioni versionate si validano e la documentazione si rigenera con:
+
+```bash
+.venv/bin/python -m src.masking
+```
+
+Le funzioni di `src/masking.py` sono pure e non richiedono PostgreSQL. Le
+pseudonimizzazioni richiedono `MASKING_SECRET` nell'ambiente, validato senza
+stamparne il valore, e usano HMAC-SHA-256 con namespace distinti. Le collisioni
+sono risolte deterministicamente su input normalizzati e ordinati, mantenendo
+il mapping soltanto in memoria. In questa fase gli schemi `masked_*` non vengono
+ancora popolati.

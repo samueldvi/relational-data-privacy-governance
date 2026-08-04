@@ -1,0 +1,147 @@
+version: 1
+secret_source: environment:MASKING_SECRET
+rules:
+  mask_person_name:
+    domains: [person_name]
+    transformation_type: deterministic_pseudonymization
+    normalization: trim_collapse_spaces_casefold
+    algorithm: HMAC-SHA-256
+    output_format: synthetic_token_per_name_token
+    deterministic: true
+    null_handling: preserve
+    empty_string_handling: preserve
+    collision_handling: deterministic_counter_retry_sorted_inputs
+    analytical_impact: Preserva il numero di token ma non distribuzione o fonetica dei nomi.
+    limitations: Non preserva genere, origine linguistica o omonimie semantiche.
+  mask_email:
+    domains: [email_address]
+    transformation_type: deterministic_pseudonymization
+    normalization: trim_lowercase
+    algorithm: HMAC-SHA-256
+    output_format: u_token@example.test
+    deterministic: true
+    null_handling: preserve
+    empty_string_handling: preserve
+    collision_handling: deterministic_counter_retry_sorted_inputs
+    analytical_impact: Preserva uguaglianza e join nel consistency group, non il dominio originale.
+    limitations: Non preserva alias, provider o struttura della parte locale.
+  mask_phone:
+    domains: [phone_number]
+    transformation_type: deterministic_pseudonymization
+    normalization: international_digits_with_plus
+    algorithm: HMAC-SHA-256
+    output_format: +39 000 seven_digits
+    deterministic: true
+    null_handling: preserve
+    empty_string_handling: preserve
+    collision_handling: deterministic_counter_retry_sorted_inputs
+    analytical_impact: Preserva uguaglianza nel gruppo ma non prefisso geografico reale.
+    limitations: Il prefisso 000 è deliberatamente sintetico e non instradabile.
+  mask_tax_code:
+    domains: [italian_tax_code]
+    transformation_type: deterministic_format_preserving_pseudonymization
+    normalization: trim_remove_spaces_uppercase
+    algorithm: HMAC-SHA-256_with_check_character
+    output_format: sixteen_alphanumeric_characters
+    deterministic: true
+    null_handling: preserve
+    empty_string_handling: preserve
+    collision_handling: deterministic_counter_retry_sorted_inputs
+    analytical_impact: Preserva formato, validità formale e uguaglianza nel gruppo.
+    limitations: Non preserva i componenti anagrafici codificati nell'originale.
+  mask_iban:
+    domains: [italian_iban]
+    transformation_type: deterministic_format_preserving_pseudonymization
+    normalization: remove_spaces_uppercase
+    algorithm: HMAC-SHA-256_with_MOD-97
+    output_format: IT_check_CIN_00000_00000_account
+    deterministic: true
+    null_handling: preserve
+    empty_string_handling: preserve
+    collision_handling: deterministic_counter_retry_sorted_inputs
+    analytical_impact: Preserva formato, checksum e uguaglianza nel gruppo.
+    limitations: ABI e CAB 00000 rendono intenzionalmente non instradabile l'output.
+  shift_birth_date:
+    domains: [birth_date]
+    transformation_type: bounded_deterministic_shift
+    normalization: ISO_date
+    algorithm: HMAC-SHA-256_offset_modulo_61
+    output_format: date_within_plus_or_minus_30_days
+    deterministic: true
+    null_handling: preserve
+    empty_string_handling: reject
+    collision_handling: not_applicable
+    analytical_impact: Mantiene approssimativamente età e coorti, non il giorno esatto.
+    limitations: L'ordinamento tra persone con date vicine può cambiare.
+  redact_free_text:
+    domains: [free_text_with_pii]
+    transformation_type: deterministic_multipattern_redaction
+    normalization: non_destructive
+    algorithm: regex_and_explicit_known_name_dictionary
+    output_format: standard_redaction_markers
+    deterministic: true
+    null_handling: preserve
+    empty_string_handling: preserve
+    collision_handling: not_applicable
+    analytical_impact: Preserva testo non sensibile ma rimuove contenuti identificativi rilevati.
+    limitations: Regex e dizionari non garantiscono copertura completa senza strumenti NER.
+  preserve_technical_key:
+    domains: [internal_identifier]
+    transformation_type: approved_identity
+    normalization: none
+    algorithm: identity_after_registry_authorization
+    output_format: unchanged
+    deterministic: true
+    null_handling: preserve
+    empty_string_handling: preserve
+    collision_handling: not_applicable
+    analytical_impact: Preserva integralmente join e integrità referenziale.
+    limitations: Applicabile solo alle colonne approvate esplicitamente nel registry.
+  preserve_value:
+    domains: [aggregate_metric, business_metadata, consent_information, employment_information, financial_transaction, geographic_information, internal_identifier, technical_timestamp]
+    transformation_type: identity
+    normalization: none
+    algorithm: identity
+    output_format: unchanged
+    deterministic: true
+    null_handling: preserve
+    empty_string_handling: preserve
+    collision_handling: not_applicable
+    analytical_impact: Nessun impatto analitico sul valore.
+    limitations: La classificazione e il contesto devono essere validati prima dell'esecuzione.
+  review_before_masking:
+    domains: [bank_reference]
+    transformation_type: blocking_control
+    normalization: none
+    algorithm: raise_controlled_error
+    output_format: no_output
+    deterministic: true
+    null_handling: block_for_non_null
+    empty_string_handling: block
+    collision_handling: not_applicable
+    analytical_impact: Impedisce trasformazioni non approvate.
+    limitations: Richiede decisione esplicita del data owner.
+  mask_contact_value:
+    domains: [contact_value]
+    transformation_type: conditional_deterministic_pseudonymization
+    normalization: based_on_contact_type
+    algorithm: HMAC-SHA-256
+    output_format: email_or_phone_synthetic_format
+    deterministic: true
+    null_handling: preserve
+    empty_string_handling: preserve
+    collision_handling: deterministic_counter_retry_sorted_inputs
+    analytical_impact: Preserva il tipo di contatto e l'uguaglianza nel relativo namespace.
+    limitations: Richiede il discriminante tipo della stessa riga.
+  mask_postal_address:
+    domains: [postal_address]
+    transformation_type: deterministic_pseudonymization
+    normalization: trim_collapse_spaces_casefold
+    algorithm: HMAC-SHA-256
+    output_format: synthetic_address_token
+    deterministic: true
+    null_handling: preserve
+    empty_string_handling: preserve
+    collision_handling: deterministic_counter_retry_sorted_inputs
+    analytical_impact: Non preserva geografia o struttura civica dell'indirizzo.
+    limitations: Componenti geografiche indirette seguono regole separate nel registry.

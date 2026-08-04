@@ -1,0 +1,106 @@
+version: 1
+secret_source: environment:MASKING_SECRET
+groups:
+  customer_tax_code:
+    description: Codici fiscali cliente, incluse colonne con nome fuorviante.
+    data_domain: italian_tax_code
+    data_subject: customer
+    namespace: tax_code.customer.v1
+    normalization: trim_remove_spaces_uppercase
+    algorithm: HMAC-SHA-256
+    output_format: italian_tax_code_16_with_check_character
+    collision_strategy: deterministic_counter_retry_sorted_inputs
+    columns:
+      - billing.sconti.cod_rif
+      - crm.clienti.cod_fisc
+  employee_tax_code:
+    description: Codici fiscali dei dipendenti, separati da quelli cliente.
+    data_domain: italian_tax_code
+    data_subject: employee
+    namespace: tax_code.employee.v1
+    normalization: trim_remove_spaces_uppercase
+    algorithm: HMAC-SHA-256
+    output_format: italian_tax_code_16_with_check_character
+    collision_strategy: deterministic_counter_retry_sorted_inputs
+    columns:
+      - hr.dipendenti.cod_fisc
+  customer_email:
+    description: Email cliente replicate nei processi CRM e Billing.
+    data_domain: email_address
+    data_subject: customer
+    namespace: email.customer.v1
+    normalization: trim_lowercase
+    algorithm: HMAC-SHA-256
+    output_format: u_token@example.test
+    collision_strategy: deterministic_counter_retry_sorted_inputs
+    columns:
+      - billing.pagamenti.rif_esterno
+      - billing.solleciti.destinatario_email
+      - crm.clienti.email
+  employee_email:
+    description: Email aziendali dei dipendenti.
+    data_domain: email_address
+    data_subject: employee
+    namespace: email.employee.v1
+    normalization: trim_lowercase
+    algorithm: HMAC-SHA-256
+    output_format: u_token@example.test
+    collision_strategy: deterministic_counter_retry_sorted_inputs
+    columns:
+      - hr.dipendenti.email_aziendale
+  customer_iban:
+    description: IBAN degli intestatari collegati ai clienti.
+    data_domain: italian_iban
+    data_subject: bank_account_holder
+    namespace: iban.customer.v1
+    normalization: remove_spaces_uppercase
+    algorithm: HMAC-SHA-256
+    output_format: italian_iban_27_non_routable
+    collision_strategy: deterministic_counter_retry_sorted_inputs
+    columns:
+      - billing.coordinate_bancarie.iban
+  employee_iban:
+    description: IBAN dipendente coerente tra anagrafica e accredito busta paga.
+    data_domain: italian_iban
+    data_subject: employee
+    namespace: iban.employee.v1
+    normalization: remove_spaces_uppercase
+    algorithm: HMAC-SHA-256
+    output_format: italian_iban_27_non_routable
+    collision_strategy: deterministic_counter_retry_sorted_inputs
+    columns:
+      - hr.buste_paga.iban_accredito
+      - hr.dipendenti.iban
+  customer_phone:
+    description: Numeri telefonici principali dei clienti.
+    data_domain: phone_number
+    data_subject: customer
+    namespace: phone.customer.v1
+    normalization: international_digits_with_plus
+    algorithm: HMAC-SHA-256
+    output_format: +39_000_seven_digits
+    collision_strategy: deterministic_counter_retry_sorted_inputs
+    columns:
+      - crm.clienti.telefono
+  commercial_contact_email:
+    description: Email dei referenti commerciali.
+    data_domain: email_address
+    data_subject: commercial_contact
+    namespace: email.commercial_contact.v1
+    normalization: trim_lowercase
+    algorithm: HMAC-SHA-256
+    output_format: u_token@example.test
+    collision_strategy: deterministic_counter_retry_sorted_inputs
+    columns:
+      - crm.referenti_commerciali.email_ref
+  commercial_contact_phone:
+    description: Telefoni dei referenti commerciali.
+    data_domain: phone_number
+    data_subject: commercial_contact
+    namespace: phone.commercial_contact.v1
+    normalization: international_digits_with_plus
+    algorithm: HMAC-SHA-256
+    output_format: +39_000_seven_digits
+    collision_strategy: deterministic_counter_retry_sorted_inputs
+    columns:
+      - crm.referenti_commerciali.telefono_ref

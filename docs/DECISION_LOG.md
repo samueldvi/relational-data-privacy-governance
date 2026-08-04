@@ -82,3 +82,20 @@ caso non risolto con motivazione concreta deve diventare `Dubbio` con stato
 **Motivazione:** la completezza della copertura prevale sull'automazione. Un
 falso negativo lascerebbe PII esposta, mentre un dubbio esplicito conserva
 evidenza, rischio e responsabilità della revisione umana.
+
+---
+
+## D-007 — Derivazione HMAC namespaced e collisioni deterministiche
+
+**Stato:** approvata
+
+**Decisione:** derivare ogni pseudonimo con HMAC-SHA-256 su namespace, valore
+normalizzato e, solo in caso di collisione, contatore di retry. Elaborare gli
+input distinti in ordine normalizzato, mantenere il mapping esclusivamente in
+memoria e separare i namespace per dominio e soggetto. Gli IBAN sintetici usano
+ABI e CAB `00000`, numero di conto derivato e checksum MOD-97 valido.
+
+**Motivazione:** la separazione impedisce correlazioni involontarie tra domini
+o soggetti, l'ordinamento rende il risultato indipendente dall'ordine delle
+righe e il contatore risolve collisioni senza affidarsi alla sola probabilità.
+ABI e CAB nulli mantengono il formato ma rendono l'output non instradabile.

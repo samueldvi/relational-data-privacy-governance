@@ -14,7 +14,7 @@ from typing import Any
 from faker import Faker
 from psycopg import sql
 
-from src.db import get_connection
+from src.infrastructure.database.connection import get_connection
 
 
 DEFAULT_SEED = 20260804

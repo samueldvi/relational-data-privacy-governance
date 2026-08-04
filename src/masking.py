@@ -5,7 +5,6 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
-import os
 import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -13,9 +12,10 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, TypeVar
 
-import yaml
-
 from src.generate_data import is_valid_italian_iban, is_valid_tax_code, tax_code_check_character
+from src.infrastructure.config.loader import load_yaml_path
+from src.infrastructure.security.secret_provider import EnvironmentSecretProvider
+from src.shared.errors import MaskingSecretError
 
 
 MASKING_RULES_PATH = Path("config/masking_rules.yml")
@@ -92,7 +92,10 @@ def validate_secret(secret: str | None) -> bytes:
 
 
 def get_masking_secret() -> str:
-    secret = os.environ.get("MASKING_SECRET")
+    try:
+        secret = EnvironmentSecretProvider().masking_secret()
+    except MaskingSecretError as error:
+        raise MissingSecretError("MASKING_SECRET is required for deterministic masking.") from error
     validate_secret(secret)
     assert secret is not None
     return secret
@@ -359,8 +362,7 @@ def resolve_collisions(
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
-    with path.open(encoding="utf-8") as input_file:
-        return yaml.safe_load(input_file)
+    return load_yaml_path(path)
 
 
 def validate_masking_configuration(

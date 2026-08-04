@@ -11,7 +11,7 @@ from typing import Any, Callable
 
 from psycopg import sql
 
-from src.db import get_connection
+from src.infrastructure.database.connection import get_connection
 from src.generate_data import is_valid_italian_iban, is_valid_tax_code
 from src.inventory import SOURCE_SCHEMAS, collect_inventory
 

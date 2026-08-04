@@ -9,10 +9,10 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Callable
 
-import yaml
 from psycopg import sql
 
-from src.db import get_connection
+from src.infrastructure.config.loader import load_yaml_path
+from src.infrastructure.database.connection import get_connection
 from src.masking import (
     CONSISTENCY_GROUPS_PATH,
     REGISTRY_PATH,
@@ -80,8 +80,7 @@ class MaskedValidationError(MaskingPipelineError):
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
-    with path.open(encoding="utf-8") as input_file:
-        return yaml.safe_load(input_file)
+    return load_yaml_path(path)
 
 
 def _qualified(schema_name: str, table_name: str) -> sql.Composed:

@@ -49,3 +49,20 @@ tabelle ma non rivelano la natura PII dei valori. Questo consente di verificare
 che profiling, confronto dei valori e relazioni cross-tabella integrino la
 classificazione basata sul nome. Non vengono aggiunte FK perché le dipendenze
 sono logiche e devono restare tali.
+
+---
+
+## D-005 — Determinismo e sicurezza del dataset sintetico
+
+**Stato:** approvata
+
+**Decisione:** costruire l'intero dataset con un seed esplicito e una data di
+riferimento fissa (`2025-12-31`), usando domini email `example.test`, numerazioni
+telefoniche marcate come sintetiche e generatori locali per codici fiscali e
+IBAN dotati di checksum formale. Il reset usa `TRUNCATE ... RESTART IDENTITY`
+in un'unica transazione e non modifica la struttura del database.
+
+**Motivazione:** una data corrente renderebbe l'output instabile; namespace
+pubblici o dati hardcoded potrebbero invece coincidere con persone reali. La
+costruzione completa prima del caricamento rende inoltre ripetibile l'ordine
+delle operazioni e impedisce carichi parziali in caso di errore.

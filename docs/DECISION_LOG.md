@@ -22,16 +22,6 @@
 
 ## D-003 — Struttura dell'output masked
 
-**Stato:** in attesa di chiarimento
-
-**Decisione provvisoria:** non implementare ancora lo schema di destinazione.
-
-**Motivazione:** è stato chiesto a Nicola se utilizzare uno schema unico oppure tre schemi distinti.
-
----
-
-## D-003 — Struttura dell'output masked
-
 **Stato:** approvata
 
 **Decisione:** creare tre schemi distinti:
@@ -42,3 +32,37 @@
 **Motivazione:** la separazione originale deve essere preservata perché in produzione i permessi sono diversi per schema e il masking non deve modificarli.
 
 **Fonte:** chiarimento di Nicola del 2026-08-04.
+
+---
+
+## D-004 — Collocazione delle colonne PII con nome fuorviante
+
+**Stato:** approvata
+
+**Decisione:** aggiungere `cod_rif` a `billing.sconti` e `rif_esterno` a
+`billing.pagamenti`. Durante la generazione, la prima conterrà codici fiscali
+già presenti in `crm.clienti.cod_fisc`, la seconda email già presenti in
+`crm.clienti.email`.
+
+**Motivazione:** entrambi i nomi sono plausibili nel contesto delle rispettive
+tabelle ma non rivelano la natura PII dei valori. Questo consente di verificare
+che profiling, confronto dei valori e relazioni cross-tabella integrino la
+classificazione basata sul nome. Non vengono aggiunte FK perché le dipendenze
+sono logiche e devono restare tali.
+
+---
+
+## D-005 — Determinismo e sicurezza del dataset sintetico
+
+**Stato:** approvata
+
+**Decisione:** costruire l'intero dataset con un seed esplicito e una data di
+riferimento fissa (`2025-12-31`), usando domini email `example.test`, numerazioni
+telefoniche marcate come sintetiche e generatori locali per codici fiscali e
+IBAN dotati di checksum formale. Il reset usa `TRUNCATE ... RESTART IDENTITY`
+in un'unica transazione e non modifica la struttura del database.
+
+**Motivazione:** una data corrente renderebbe l'output instabile; namespace
+pubblici o dati hardcoded potrebbero invece coincidere con persone reali. La
+costruzione completa prima del caricamento rende inoltre ripetibile l'ordine
+delle operazioni e impedisce carichi parziali in caso di errore.

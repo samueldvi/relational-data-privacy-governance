@@ -14,3 +14,4 @@
 - Non ricostruire le ore a memoria a fine progetto.
 
 | 16:00 | 17:03 | 1h 03m | Setup repository e PostgreSQL locale | Struttura creata, segreti separati, Docker Compose configurato su porta 5433, database healthy e pgcrypto verificato |
+| 17:30 | 17:33 | 3m | Milestone 1: schema relazionale sintetico | Creato branch dedicato; consolidata D-003; aggiunte 6 tabelle HR, 6 Billing e 3 schemi masked; documentate le colonne trappola; validati 20/20 source table, constraint, relazioni logiche e idempotenza SQL |

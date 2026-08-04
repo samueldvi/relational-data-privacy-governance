@@ -19,7 +19,7 @@ Il repository prepara concetti e controlli trasferibili verso Informatica Data P
 | Righe sintetiche sorgente / masked | 2.063 / 2.063 |
 | Regole di masking | 12 |
 | Consistency group | 9 |
-| Test automatici | 108 superati prima della finalizzazione documentale |
+| Test automatici | 132 superati nella suite finale |
 | Manifest | checksum per tabella e globale, deterministici |
 
 La suite verifica inoltre rollback completo, idempotenza con lo stesso secret,

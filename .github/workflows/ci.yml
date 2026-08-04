@@ -76,6 +76,9 @@ jobs:
       - name: Check patch whitespace
         run: git diff --check
 
+      - name: Run repository safety check
+        run: python scripts/check_repository_safety.py
+
       - name: Check tracked sensitive filenames
         run: |
           if git ls-files | grep -E '(^|/)\.env$|(^|/)(credentials?|secrets?)(/|\.)|\.(dump|sql\.gz|pem|key|p12)$|(^|/)output/.*(mapping|pii.samples)' ; then

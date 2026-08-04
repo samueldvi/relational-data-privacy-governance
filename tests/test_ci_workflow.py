@@ -41,6 +41,7 @@ def test_workflow_runs_database_pipeline_tests_and_git_checks() -> None:
     assert "pytest -q" in commands
     assert "git diff --check" in commands
     assert "git ls-files" in commands
+    assert "python scripts/check_repository_safety.py" in commands
 
 
 def test_workflow_permissions_are_read_only_and_concurrency_is_enabled() -> None:

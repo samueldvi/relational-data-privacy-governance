@@ -23,3 +23,17 @@ non elimina né ricrea schemi o tabelle.
 Email e telefoni usano namespace chiaramente sintetici. Codici fiscali e IBAN
 non appartengono a persone reali: sono costruiti casualmente e includono un
 checksum formalmente valido esclusivamente per i test.
+
+## Inventario tecnico
+
+Per rigenerare l'inventario delle colonne e l'analisi delle relazioni dalla
+root del repository:
+
+```bash
+.venv/bin/python -m src.inventory
+```
+
+Il comando legge esclusivamente i metadati dei tre schemi sorgente e produce
+`output/inventory.csv` e `output/logical_relationships.csv`. Gli output sono
+deterministici, non contengono campioni di dati né credenziali e restano esclusi
+da Git. Le relazioni suggerite non modificano i constraint del database.

@@ -1,0 +1,3177 @@
+version: 1
+source:
+  inventory: output/inventory.csv
+  profiling: output/profiling_results.json
+  overrides: config/classification_overrides.yml
+  dynamic_timestamp_included: false
+columns:
+- schema_name: billing
+  table_name: coordinate_bancarie
+  column_name: coordinata_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=90; non_null=90; distinct=90
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: coordinate_bancarie
+  column_name: cliente_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship:
+  - target: crm.clienti.cliente_id
+    status: logical_suspected
+    match_percentage: 100.0
+    orphan_count: 0
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=90; non_null=90; distinct=90
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - crm.clienti.cliente_id
+- schema_name: billing
+  table_name: coordinate_bancarie
+  column_name: iban
+  ordinal_position: 3
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: true
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: italian_iban
+  data_subject: bank_account_holder
+  confidence: 0.99
+  rationale: Valori con struttura italiana e checksum IBAN valido, associati a conto o intestatario.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=90; non_null=90; distinct=90
+  - pattern=italian_iban,bank_reference
+  masking_rule: mask_iban
+  consistency_group: customer_iban
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: coordinate_bancarie
+  column_name: intestatario
+  ordinal_position: 4
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: person_name
+  data_subject: bank_account_holder
+  confidence: 0.97
+  rationale: Contesto personale e confronto con colonne note confermano valori compatibili con nomi o cognomi di persone.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=90; non_null=90; distinct=90
+  - pattern=person_name
+  masking_rule: mask_person_name
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: coordinate_bancarie
+  column_name: banca
+  ordinal_position: 5
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: business_metadata
+  data_subject: not_applicable
+  confidence: 0.91
+  rationale: Denominazione sintetica dell'istituto, non dell'intestatario del conto.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=90; non_null=90; distinct=7
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: fatture
+  column_name: fattura_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=200; non_null=200; distinct=200
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: fatture
+  column_name: cliente_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship:
+  - target: crm.clienti.cliente_id
+    status: logical_confirmed
+    match_percentage: 100.0
+    orphan_count: 0
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 1.0
+  rationale: Identificativo che collega logicamente la fattura al cliente con match completo e nessun orfano, senza FK dichiarata.
+  detection_methods:
+  - column_context
+  - manual_override
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=200; non_null=200; distinct=150
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: confirmed
+  review_note: Decisione applicata da Decisione architetturale approvata e inventario tecnico.
+  dependencies:
+  - crm.clienti.cliente_id
+- schema_name: billing
+  table_name: fatture
+  column_name: numero_fattura
+  ordinal_position: 3
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: true
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.88
+  rationale: Attributo di una transazione o comunicazione collegata, direttamente o logicamente, a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=200; non_null=200; distinct=200
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: fatture
+  column_name: data_emissione
+  ordinal_position: 4
+  data_type: date
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.88
+  rationale: Attributo di una transazione o comunicazione collegata, direttamente o logicamente, a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=200; non_null=200; distinct=50
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: fatture
+  column_name: importo
+  ordinal_position: 5
+  data_type: numeric
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.88
+  rationale: Attributo di una transazione o comunicazione collegata, direttamente o logicamente, a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=200; non_null=200; distinct=200
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: fatture
+  column_name: iva
+  ordinal_position: 6
+  data_type: numeric
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: financial_transaction
+  data_subject: not_applicable
+  confidence: 0.9
+  rationale: Aliquota fiscale isolata, non identificante e comune a molte fatture.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=200; non_null=200; distinct=1
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: fatture
+  column_name: stato
+  ordinal_position: 7
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.88
+  rationale: Attributo di una transazione o comunicazione collegata, direttamente o logicamente, a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=200; non_null=200; distinct=3
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: pagamenti
+  column_name: pagamento_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=160; non_null=160; distinct=160
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: pagamenti
+  column_name: fattura_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: true
+  is_unique: false
+  declared_relationship:
+  - target: billing.fatture.fattura_id
+    status: declared
+    match_percentage: 100.0
+    orphan_count: 0
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=160; non_null=160; distinct=160
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - billing.fatture.fattura_id
+- schema_name: billing
+  table_name: pagamenti
+  column_name: data_pagamento
+  ordinal_position: 3
+  data_type: date
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.88
+  rationale: Attributo di una transazione o comunicazione collegata, direttamente o logicamente, a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=160; non_null=160; distinct=50
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: pagamenti
+  column_name: importo_pagato
+  ordinal_position: 4
+  data_type: numeric
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.88
+  rationale: Attributo di una transazione o comunicazione collegata, direttamente o logicamente, a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=160; non_null=160; distinct=160
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: pagamenti
+  column_name: metodo
+  ordinal_position: 5
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.88
+  rationale: Attributo di una transazione o comunicazione collegata, direttamente o logicamente, a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=160; non_null=160; distinct=3
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: pagamenti
+  column_name: riferimento_bancario
+  ordinal_position: 6
+  data_type: character varying
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Dubbio
+  data_domain: bank_reference
+  data_subject: customer
+  confidence: 0.45
+  rationale: Il campo contiene riferimenti sintetici eterogenei e una quota di valori compatibili con codici fiscali; il data
+    owner deve chiarire la semantica produttiva.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=160; non_null=160; distinct=160
+  - pattern=italian_tax_code,bank_reference
+  - cross_match=crm.clienti.cod_fisc:100.00%
+  masking_rule: review_before_masking
+  consistency_group: null
+  review_status: review_required
+  review_note: Validazione del data owner obbligatoria prima del masking.
+  dependencies:
+  - billing.sconti.cod_rif
+  - crm.clienti.cod_fisc
+- schema_name: billing
+  table_name: pagamenti
+  column_name: rif_esterno
+  ordinal_position: 7
+  data_type: character varying
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-nascosta
+  data_domain: email_address
+  data_subject: customer
+  confidence: 1.0
+  rationale: I valori hanno sintassi email, sono normalizzati lowercase e coincidono con crm.clienti.email con match cross-tabella
+    del 100%.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - manual_override
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=160; non_null=160; distinct=150
+  - pattern=email
+  - cross_match=crm.clienti.email:100.00%
+  - cross_match=crm.contatti_extra.valore:100.00%
+  masking_rule: mask_email
+  consistency_group: customer_email
+  review_status: confirmed
+  review_note: Decisione applicata da Decisione D-004 e verifica tecnica del profiling.
+  dependencies:
+  - billing.solleciti.destinatario_email
+  - crm.clienti.email
+  - crm.contatti_extra.valore
+- schema_name: billing
+  table_name: report_mensili
+  column_name: report_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: internal_identifier
+  data_subject: not_applicable
+  confidence: 0.94
+  rationale: Chiave tecnica della struttura operativa, priva di collegamento diretto a una persona nel modello corrente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=12; non_null=12; distinct=12
+  - pattern=technical_identifier,aggregate_value
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: report_mensili
+  column_name: mese
+  ordinal_position: 2
+  data_type: smallint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: true
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: aggregate_metric
+  data_subject: not_applicable
+  confidence: 0.99
+  rationale: Metrica mensile aggregata senza dettaglio individuale nel modello corrente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=12; non_null=12; distinct=12
+  - pattern=aggregate_value
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: report_mensili
+  column_name: anno
+  ordinal_position: 3
+  data_type: smallint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: true
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: aggregate_metric
+  data_subject: not_applicable
+  confidence: 0.99
+  rationale: Metrica mensile aggregata senza dettaglio individuale nel modello corrente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=12; non_null=12; distinct=1
+  - pattern=aggregate_value
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: report_mensili
+  column_name: totale_fatturato
+  ordinal_position: 4
+  data_type: numeric
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: aggregate_metric
+  data_subject: not_applicable
+  confidence: 0.99
+  rationale: Metrica mensile aggregata senza dettaglio individuale nel modello corrente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=12; non_null=12; distinct=12
+  - pattern=aggregate_value
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: report_mensili
+  column_name: totale_incassato
+  ordinal_position: 5
+  data_type: numeric
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: aggregate_metric
+  data_subject: not_applicable
+  confidence: 0.99
+  rationale: Metrica mensile aggregata senza dettaglio individuale nel modello corrente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=12; non_null=12; distinct=12
+  - pattern=aggregate_value
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: sconti
+  column_name: sconto_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=60; non_null=60; distinct=60
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: sconti
+  column_name: cliente_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship:
+  - target: crm.clienti.cliente_id
+    status: logical_suspected
+    match_percentage: 100.0
+    orphan_count: 0
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=60; non_null=60; distinct=60
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - crm.clienti.cliente_id
+- schema_name: billing
+  table_name: sconti
+  column_name: codice_sconto
+  ordinal_position: 3
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: true
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.88
+  rationale: Attributo di una transazione o comunicazione collegata, direttamente o logicamente, a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=60; non_null=60; distinct=60
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: sconti
+  column_name: percentuale
+  ordinal_position: 4
+  data_type: numeric
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.88
+  rationale: Attributo di una transazione o comunicazione collegata, direttamente o logicamente, a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=60; non_null=60; distinct=21
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: sconti
+  column_name: data_scadenza
+  ordinal_position: 5
+  data_type: date
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.88
+  rationale: Attributo di una transazione o comunicazione collegata, direttamente o logicamente, a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=60; non_null=60; distinct=60
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: sconti
+  column_name: cod_rif
+  ordinal_position: 6
+  data_type: character varying
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-nascosta
+  data_domain: italian_tax_code
+  data_subject: customer
+  confidence: 1.0
+  rationale: Il nome è fuorviante, ma tutti i valori rispettano il formato fiscale e coincidono con crm.clienti.cod_fisc con
+    match cross-tabella del 100%.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - manual_override
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=60; non_null=60; distinct=60
+  - pattern=italian_tax_code
+  - cross_match=crm.clienti.cod_fisc:100.00%
+  masking_rule: mask_tax_code
+  consistency_group: customer_tax_code
+  review_status: confirmed
+  review_note: Decisione applicata da Decisione D-004 e verifica tecnica del profiling.
+  dependencies:
+  - billing.pagamenti.riferimento_bancario
+  - crm.clienti.cod_fisc
+- schema_name: billing
+  table_name: solleciti
+  column_name: sollecito_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=40; non_null=40; distinct=40
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: solleciti
+  column_name: fattura_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: true
+  is_unique: false
+  declared_relationship:
+  - target: billing.fatture.fattura_id
+    status: declared
+    match_percentage: 100.0
+    orphan_count: 0
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=40; non_null=40; distinct=40
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - billing.fatture.fattura_id
+- schema_name: billing
+  table_name: solleciti
+  column_name: data_invio
+  ordinal_position: 3
+  data_type: date
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.88
+  rationale: Attributo di una transazione o comunicazione collegata, direttamente o logicamente, a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=40; non_null=40; distinct=28
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: billing
+  table_name: solleciti
+  column_name: destinatario_email
+  ordinal_position: 4
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: email_address
+  data_subject: customer
+  confidence: 0.98
+  rationale: Sintassi email rilevata sui valori e normalizzazione case-insensitive disponibile per i confronti.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=40; non_null=40; distinct=40
+  - pattern=email
+  - cross_match=billing.pagamenti.rif_esterno:100.00%
+  - cross_match=crm.clienti.email:100.00%
+  - cross_match=crm.contatti_extra.valore:100.00%
+  masking_rule: mask_email
+  consistency_group: customer_email
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - billing.pagamenti.rif_esterno
+  - crm.clienti.email
+  - crm.contatti_extra.valore
+- schema_name: billing
+  table_name: solleciti
+  column_name: testo_sollecito
+  ordinal_position: 5
+  data_type: text
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-nascosta
+  data_domain: free_text_with_pii
+  data_subject: customer
+  confidence: 0.99
+  rationale: Il testo libero contiene pattern PII e nomi noti; richiede futura redaction multipattern e revisione dei limiti
+    regex.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=40; non_null=40; distinct=40
+  - pattern=email,italian_tax_code,person_name,free_text_pii
+  masking_rule: redact_free_text
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: campagne
+  column_name: campagna_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: internal_identifier
+  data_subject: not_applicable
+  confidence: 0.94
+  rationale: Chiave tecnica della struttura operativa, priva di collegamento diretto a una persona nel modello corrente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=5; non_null=5; distinct=5
+  - pattern=technical_identifier
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: campagne
+  column_name: nome_campagna
+  ordinal_position: 2
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: business_metadata
+  data_subject: not_applicable
+  confidence: 0.94
+  rationale: Metadato di campagna sintetica non riferito a un interessato individuale.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=5; non_null=5; distinct=5
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: campagne
+  column_name: email_template
+  ordinal_position: 3
+  data_type: text
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: business_metadata
+  data_subject: not_applicable
+  confidence: 1.0
+  rationale: Il contenuto usa segnaposto di template e non indirizzi personali effettivi; la forma simile a un'email non costituisce
+    PII reale.
+  detection_methods:
+  - column_context
+  - manual_override
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=5; non_null=5; distinct=5
+  - pattern=email_template
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: false_positive_confirmed
+  review_note: Decisione applicata da Falso positivo controllato approvato nel brief di progetto.
+  dependencies: []
+- schema_name: crm
+  table_name: campagne
+  column_name: data_inizio
+  ordinal_position: 4
+  data_type: date
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: business_metadata
+  data_subject: not_applicable
+  confidence: 0.94
+  rationale: Metadato di campagna sintetica non riferito a un interessato individuale.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=5; non_null=5; distinct=5
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: clienti
+  column_name: cliente_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=150
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: clienti
+  column_name: nome
+  ordinal_position: 2
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: person_name
+  data_subject: customer
+  confidence: 0.97
+  rationale: Contesto personale e confronto con colonne note confermano valori compatibili con nomi o cognomi di persone.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=129
+  - pattern=person_name
+  masking_rule: mask_person_name
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - hr.dipendenti.nome
+- schema_name: crm
+  table_name: clienti
+  column_name: cognome
+  ordinal_position: 3
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: person_name
+  data_subject: customer
+  confidence: 0.97
+  rationale: Contesto personale e confronto con colonne note confermano valori compatibili con nomi o cognomi di persone.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=144
+  - pattern=person_name,surname
+  masking_rule: mask_person_name
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - hr.dipendenti.cognome
+- schema_name: crm
+  table_name: clienti
+  column_name: email
+  ordinal_position: 4
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: email_address
+  data_subject: customer
+  confidence: 0.98
+  rationale: Sintassi email rilevata sui valori e normalizzazione case-insensitive disponibile per i confronti.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=150
+  - pattern=email
+  - cross_match=billing.pagamenti.rif_esterno:100.00%
+  - cross_match=crm.contatti_extra.valore:100.00%
+  masking_rule: mask_email
+  consistency_group: customer_email
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - billing.pagamenti.rif_esterno
+  - billing.solleciti.destinatario_email
+  - crm.contatti_extra.valore
+- schema_name: crm
+  table_name: clienti
+  column_name: telefono
+  ordinal_position: 5
+  data_type: character varying
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: phone_number
+  data_subject: customer
+  confidence: 0.98
+  rationale: Struttura telefonica coerente rilevata nei valori, non soltanto nel nome della colonna.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=150
+  - pattern=phone
+  masking_rule: mask_phone
+  consistency_group: customer_phone
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - crm.contatti_extra.valore
+- schema_name: crm
+  table_name: clienti
+  column_name: cod_fisc
+  ordinal_position: 6
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: true
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: italian_tax_code
+  data_subject: customer
+  confidence: 0.99
+  rationale: Struttura di 16 caratteri e carattere di controllo validi, confermati dal profiling dei valori.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=150
+  - pattern=italian_tax_code
+  masking_rule: mask_tax_code
+  consistency_group: customer_tax_code
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - billing.pagamenti.riferimento_bancario
+  - billing.sconti.cod_rif
+- schema_name: crm
+  table_name: clienti
+  column_name: data_nascita
+  ordinal_position: 7
+  data_type: date
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: birth_date
+  data_subject: customer
+  confidence: 0.99
+  rationale: Data di nascita plausibile e contestualmente riferita al cliente, utilizzabile come quasi-identificatore.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=150
+  - pattern=birth_date
+  masking_rule: shift_birth_date
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: clienti
+  column_name: segmento
+  ordinal_position: 8
+  data_type: character varying
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: business_metadata
+  data_subject: customer
+  confidence: 0.82
+  rationale: Attributo del profilo cliente che può contribuire alla segmentazione o correlazione quando unito all'identificativo.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=150; non_null=150; distinct=3
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: clienti
+  column_name: data_registrazione
+  ordinal_position: 9
+  data_type: timestamp without time zone
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: technical_timestamp
+  data_subject: customer
+  confidence: 0.82
+  rationale: Attributo del profilo cliente che può contribuire alla segmentazione o correlazione quando unito all'identificativo.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=150; non_null=150; distinct=150
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: consensi
+  column_name: consenso_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=200; non_null=200; distinct=200
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: consensi
+  column_name: cliente_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: true
+  is_unique: false
+  declared_relationship:
+  - target: crm.clienti.cliente_id
+    status: declared
+    match_percentage: 100.0
+    orphan_count: 0
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=200; non_null=200; distinct=150
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - crm.clienti.cliente_id
+- schema_name: crm
+  table_name: consensi
+  column_name: tipo_consenso
+  ordinal_position: 3
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: consent_information
+  data_subject: customer
+  confidence: 0.94
+  rationale: Informazione di consenso associata tramite chiave a un cliente e quindi parte del suo profilo privacy.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=200; non_null=200; distinct=3
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: consensi
+  column_name: data_consenso
+  ordinal_position: 4
+  data_type: timestamp without time zone
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: consent_information
+  data_subject: customer
+  confidence: 0.94
+  rationale: Informazione di consenso associata tramite chiave a un cliente e quindi parte del suo profilo privacy.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=200; non_null=200; distinct=200
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: consensi
+  column_name: revocato
+  ordinal_position: 5
+  data_type: boolean
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: consent_information
+  data_subject: customer
+  confidence: 0.94
+  rationale: Informazione di consenso associata tramite chiave a un cliente e quindi parte del suo profilo privacy.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=200; non_null=200; distinct=2
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: contatti_extra
+  column_name: contatto_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=200; non_null=200; distinct=200
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: contatti_extra
+  column_name: cliente_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: true
+  is_unique: false
+  declared_relationship:
+  - target: crm.clienti.cliente_id
+    status: declared
+    match_percentage: 100.0
+    orphan_count: 0
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=200; non_null=200; distinct=150
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - crm.clienti.cliente_id
+- schema_name: crm
+  table_name: contatti_extra
+  column_name: tipo
+  ordinal_position: 3
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: business_metadata
+  data_subject: customer
+  confidence: 0.9
+  rationale: Discriminante del tipo di contatto; non contiene da solo il valore personale.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=200; non_null=200; distinct=2
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: contatti_extra
+  column_name: valore
+  ordinal_position: 4
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: contact_value
+  data_subject: customer
+  confidence: 0.98
+  rationale: Il discriminante di riga e il profiling mostrano valori email o telefono direttamente utilizzabili per contattare
+    il cliente.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=200; non_null=200; distinct=200
+  - pattern=email,phone
+  - cross_match=billing.pagamenti.rif_esterno:100.00%
+  - cross_match=crm.clienti.email:100.00%
+  - cross_match=crm.clienti.telefono:100.00%
+  masking_rule: mask_contact_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - billing.pagamenti.rif_esterno
+  - billing.solleciti.destinatario_email
+  - crm.clienti.email
+  - crm.clienti.telefono
+- schema_name: crm
+  table_name: indirizzi
+  column_name: indirizzo_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=150
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: indirizzi
+  column_name: cliente_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: true
+  is_unique: false
+  declared_relationship:
+  - target: crm.clienti.cliente_id
+    status: declared
+    match_percentage: 100.0
+    orphan_count: 0
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=150
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - crm.clienti.cliente_id
+- schema_name: crm
+  table_name: indirizzi
+  column_name: via
+  ordinal_position: 3
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: postal_address
+  data_subject: customer
+  confidence: 0.95
+  rationale: Componente granulare dell'indirizzo postale collegata tramite foreign key a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=150
+  - pattern=postal_address
+  masking_rule: mask_postal_address
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: indirizzi
+  column_name: cap
+  ordinal_position: 4
+  data_type: character varying
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: geographic_information
+  data_subject: customer
+  confidence: 0.9
+  rationale: CAP formalmente coerente e collegato all'indirizzo del cliente; costituisce un quasi-identificatore geografico.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=150
+  - pattern=postal_code
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: indirizzi
+  column_name: citta
+  ordinal_position: 5
+  data_type: character varying
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: geographic_information
+  data_subject: customer
+  confidence: 0.88
+  rationale: Componente geografica collegata a un cliente, utile alla re-identificazione in combinazione con altri attributi.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=20
+  - pattern=postal_address
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: indirizzi
+  column_name: provincia
+  ordinal_position: 6
+  data_type: character varying
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: geographic_information
+  data_subject: customer
+  confidence: 0.88
+  rationale: Componente geografica collegata a un cliente, utile alla re-identificazione in combinazione con altri attributi.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=150; non_null=150; distinct=100
+  - pattern=postal_address
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: note_cliente
+  column_name: nota_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=20; non_null=20; distinct=20
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: note_cliente
+  column_name: cliente_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: true
+  is_unique: false
+  declared_relationship:
+  - target: crm.clienti.cliente_id
+    status: declared
+    match_percentage: 100.0
+    orphan_count: 0
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=20; non_null=20; distinct=20
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - crm.clienti.cliente_id
+- schema_name: crm
+  table_name: note_cliente
+  column_name: testo
+  ordinal_position: 3
+  data_type: text
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-nascosta
+  data_domain: free_text_with_pii
+  data_subject: customer
+  confidence: 0.99
+  rationale: Il testo libero contiene pattern PII e nomi noti; richiede futura redaction multipattern e revisione dei limiti
+    regex.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=20; non_null=20; distinct=20
+  - pattern=email,phone,person_name,free_text_pii
+  masking_rule: redact_free_text
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: note_cliente
+  column_name: data_nota
+  ordinal_position: 4
+  data_type: timestamp without time zone
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: technical_timestamp
+  data_subject: customer
+  confidence: 0.9
+  rationale: Timestamp della nota collegata a un cliente tramite foreign key.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=20; non_null=20; distinct=20
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: ordini
+  column_name: ordine_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=300; non_null=300; distinct=300
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: ordini
+  column_name: cliente_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: true
+  is_unique: false
+  declared_relationship:
+  - target: crm.clienti.cliente_id
+    status: declared
+    match_percentage: 100.0
+    orphan_count: 0
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: customer
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=300; non_null=300; distinct=150
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - crm.clienti.cliente_id
+- schema_name: crm
+  table_name: ordini
+  column_name: data_ordine
+  ordinal_position: 3
+  data_type: date
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.9
+  rationale: Attributo economico o operativo dell'ordine collegato a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=300; non_null=300; distinct=247
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: ordini
+  column_name: importo
+  ordinal_position: 4
+  data_type: numeric
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.9
+  rationale: Attributo economico o operativo dell'ordine collegato a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=300; non_null=300; distinct=300
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: ordini
+  column_name: stato
+  ordinal_position: 5
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: financial_transaction
+  data_subject: customer
+  confidence: 0.9
+  rationale: Attributo economico o operativo dell'ordine collegato a un cliente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=300; non_null=300; distinct=4
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: referenti_commerciali
+  column_name: referente_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: commercial_contact
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=30; non_null=30; distinct=30
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: referenti_commerciali
+  column_name: nome_ref
+  ordinal_position: 2
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: person_name
+  data_subject: commercial_contact
+  confidence: 0.97
+  rationale: Contesto personale e confronto con colonne note confermano valori compatibili con nomi o cognomi di persone.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=30; non_null=30; distinct=30
+  - pattern=person_name
+  masking_rule: mask_person_name
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: referenti_commerciali
+  column_name: email_ref
+  ordinal_position: 3
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: email_address
+  data_subject: commercial_contact
+  confidence: 0.98
+  rationale: Sintassi email rilevata sui valori e normalizzazione case-insensitive disponibile per i confronti.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=30; non_null=30; distinct=30
+  - pattern=email
+  masking_rule: mask_email
+  consistency_group: commercial_contact_email
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: crm
+  table_name: referenti_commerciali
+  column_name: telefono_ref
+  ordinal_position: 4
+  data_type: character varying
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: phone_number
+  data_subject: commercial_contact
+  confidence: 0.98
+  rationale: Struttura telefonica coerente rilevata nei valori, non soltanto nel nome della colonna.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=30; non_null=30; distinct=30
+  - pattern=phone
+  masking_rule: mask_phone
+  consistency_group: commercial_contact_phone
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: buste_paga
+  column_name: busta_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: employee
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=100; non_null=100; distinct=100
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: buste_paga
+  column_name: dipendente_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: true
+  is_unique: true
+  declared_relationship:
+  - target: hr.dipendenti.dipendente_id
+    status: declared
+    match_percentage: 100.0
+    orphan_count: 0
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: employee
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=100; non_null=100; distinct=50
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - hr.dipendenti.dipendente_id
+- schema_name: hr
+  table_name: buste_paga
+  column_name: mese
+  ordinal_position: 3
+  data_type: smallint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: true
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: employment_information
+  data_subject: employee
+  confidence: 0.92
+  rationale: Informazione professionale, retributiva, di presenza o valutazione associata a un dipendente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=100; non_null=100; distinct=2
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: buste_paga
+  column_name: anno
+  ordinal_position: 4
+  data_type: smallint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: true
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: employment_information
+  data_subject: employee
+  confidence: 0.92
+  rationale: Informazione professionale, retributiva, di presenza o valutazione associata a un dipendente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=100; non_null=100; distinct=1
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: buste_paga
+  column_name: lordo
+  ordinal_position: 5
+  data_type: numeric
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: employment_information
+  data_subject: employee
+  confidence: 0.92
+  rationale: Informazione professionale, retributiva, di presenza o valutazione associata a un dipendente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=100; non_null=100; distinct=100
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: buste_paga
+  column_name: netto
+  ordinal_position: 6
+  data_type: numeric
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: employment_information
+  data_subject: employee
+  confidence: 0.92
+  rationale: Informazione professionale, retributiva, di presenza o valutazione associata a un dipendente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=100; non_null=100; distinct=100
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: buste_paga
+  column_name: iban_accredito
+  ordinal_position: 7
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: italian_iban
+  data_subject: employee
+  confidence: 0.99
+  rationale: Valori con struttura italiana e checksum IBAN valido, associati a conto o intestatario.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=100; non_null=100; distinct=50
+  - pattern=italian_iban,bank_reference
+  - cross_match=hr.dipendenti.iban:100.00%
+  masking_rule: mask_iban
+  consistency_group: employee_iban
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - hr.dipendenti.iban
+- schema_name: hr
+  table_name: dipendenti
+  column_name: dipendente_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: employee
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=50; non_null=50; distinct=50
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: dipendenti
+  column_name: nome
+  ordinal_position: 2
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: person_name
+  data_subject: employee
+  confidence: 0.97
+  rationale: Contesto personale e confronto con colonne note confermano valori compatibili con nomi o cognomi di persone.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=50; non_null=50; distinct=48
+  - pattern=person_name
+  masking_rule: mask_person_name
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - crm.clienti.nome
+- schema_name: hr
+  table_name: dipendenti
+  column_name: cognome
+  ordinal_position: 3
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: person_name
+  data_subject: employee
+  confidence: 0.97
+  rationale: Contesto personale e confronto con colonne note confermano valori compatibili con nomi o cognomi di persone.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=50; non_null=50; distinct=48
+  - pattern=person_name,surname
+  masking_rule: mask_person_name
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - crm.clienti.cognome
+- schema_name: hr
+  table_name: dipendenti
+  column_name: cod_fisc
+  ordinal_position: 4
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: true
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: italian_tax_code
+  data_subject: employee
+  confidence: 0.99
+  rationale: Struttura di 16 caratteri e carattere di controllo validi, confermati dal profiling dei valori.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=50; non_null=50; distinct=50
+  - pattern=italian_tax_code
+  masking_rule: mask_tax_code
+  consistency_group: employee_tax_code
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: dipendenti
+  column_name: email_aziendale
+  ordinal_position: 5
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: true
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: email_address
+  data_subject: employee
+  confidence: 0.98
+  rationale: Sintassi email rilevata sui valori e normalizzazione case-insensitive disponibile per i confronti.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=50; non_null=50; distinct=50
+  - pattern=email
+  masking_rule: mask_email
+  consistency_group: employee_email
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: dipendenti
+  column_name: iban
+  ordinal_position: 6
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: italian_iban
+  data_subject: employee
+  confidence: 0.99
+  rationale: Valori con struttura italiana e checksum IBAN valido, associati a conto o intestatario.
+  detection_methods:
+  - column_context
+  - cross_table_comparison
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=50; non_null=50; distinct=50
+  - pattern=italian_iban,bank_reference
+  - cross_match=hr.buste_paga.iban_accredito:100.00%
+  masking_rule: mask_iban
+  consistency_group: employee_iban
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - hr.buste_paga.iban_accredito
+- schema_name: hr
+  table_name: dipendenti
+  column_name: data_assunzione
+  ordinal_position: 7
+  data_type: date
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: employment_information
+  data_subject: employee
+  confidence: 0.92
+  rationale: Informazione professionale, retributiva, di presenza o valutazione associata a un dipendente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=50; non_null=50; distinct=50
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: dipendenti
+  column_name: reparto_id
+  ordinal_position: 8
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: true
+  is_unique: false
+  declared_relationship:
+  - target: hr.reparti.reparto_id
+    status: declared
+    match_percentage: 100.0
+    orphan_count: 0
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: employee
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=50; non_null=50; distinct=6
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - hr.reparti.reparto_id
+- schema_name: hr
+  table_name: formazione
+  column_name: corso_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: internal_identifier
+  data_subject: not_applicable
+  confidence: 0.94
+  rationale: Chiave tecnica della struttura operativa, priva di collegamento diretto a una persona nel modello corrente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=10; non_null=10; distinct=10
+  - pattern=technical_identifier
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: formazione
+  column_name: titolo
+  ordinal_position: 2
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: business_metadata
+  data_subject: not_applicable
+  confidence: 0.92
+  rationale: Metadato del corso sintetico non riferito a una persona, escluso il docente trattato separatamente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=10; non_null=10; distinct=10
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: formazione
+  column_name: docente
+  ordinal_position: 3
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-diretta
+  data_domain: person_name
+  data_subject: external_person
+  confidence: 0.97
+  rationale: Contesto personale e confronto con colonne note confermano valori compatibili con nomi o cognomi di persone.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=10; non_null=10; distinct=10
+  - pattern=person_name
+  masking_rule: mask_person_name
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: formazione
+  column_name: data_corso
+  ordinal_position: 4
+  data_type: date
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: business_metadata
+  data_subject: not_applicable
+  confidence: 0.92
+  rationale: Metadato del corso sintetico non riferito a una persona, escluso il docente trattato separatamente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=10; non_null=10; distinct=10
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: presenze
+  column_name: presenza_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: employee
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=250; non_null=250; distinct=250
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: presenze
+  column_name: dipendente_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: true
+  is_unique: true
+  declared_relationship:
+  - target: hr.dipendenti.dipendente_id
+    status: declared
+    match_percentage: 100.0
+    orphan_count: 0
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: employee
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=250; non_null=250; distinct=50
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - hr.dipendenti.dipendente_id
+- schema_name: hr
+  table_name: presenze
+  column_name: data
+  ordinal_position: 3
+  data_type: date
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: true
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: employment_information
+  data_subject: employee
+  confidence: 0.92
+  rationale: Informazione professionale, retributiva, di presenza o valutazione associata a un dipendente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=250; non_null=250; distinct=5
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: presenze
+  column_name: ore
+  ordinal_position: 4
+  data_type: numeric
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: employment_information
+  data_subject: employee
+  confidence: 0.92
+  rationale: Informazione professionale, retributiva, di presenza o valutazione associata a un dipendente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=250; non_null=250; distinct=1
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: presenze
+  column_name: tipo
+  ordinal_position: 5
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: employment_information
+  data_subject: employee
+  confidence: 0.92
+  rationale: Informazione professionale, retributiva, di presenza o valutazione associata a un dipendente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=250; non_null=250; distinct=1
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: reparti
+  column_name: reparto_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: internal_identifier
+  data_subject: not_applicable
+  confidence: 0.94
+  rationale: Chiave tecnica della struttura operativa, priva di collegamento diretto a una persona nel modello corrente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=6; non_null=6; distinct=6
+  - pattern=technical_identifier
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: reparti
+  column_name: nome_reparto
+  ordinal_position: 2
+  data_type: character varying
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: true
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: Non-PII
+  data_domain: business_metadata
+  data_subject: not_applicable
+  confidence: 0.95
+  rationale: Metadato organizzativo del reparto privo di riferimento individuale.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=6; non_null=6; distinct=6
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: reparti
+  column_name: responsabile_id
+  ordinal_position: 3
+  data_type: bigint
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship:
+  - target: hr.dipendenti.dipendente_id
+    status: logical_confirmed
+    match_percentage: 100.0
+    orphan_count: 0
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: employee
+  confidence: 1.0
+  rationale: Identificativo che collega logicamente il reparto al dipendente responsabile con match completo e nessun orfano,
+    senza FK dichiarata.
+  detection_methods:
+  - column_context
+  - manual_override
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=6; non_null=6; distinct=6
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: confirmed
+  review_note: Decisione applicata da Decisione architetturale approvata e inventario tecnico.
+  dependencies:
+  - hr.dipendenti.dipendente_id
+- schema_name: hr
+  table_name: valutazioni
+  column_name: valutazione_id
+  ordinal_position: 1
+  data_type: bigint
+  nullable: false
+  is_primary_key: true
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: employee
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=30; non_null=30; distinct=30
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: valutazioni
+  column_name: dipendente_id
+  ordinal_position: 2
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: true
+  is_unique: false
+  declared_relationship:
+  - target: hr.dipendenti.dipendente_id
+    status: declared
+    match_percentage: 100.0
+    orphan_count: 0
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: employee
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=30; non_null=30; distinct=30
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - hr.dipendenti.dipendente_id
+- schema_name: hr
+  table_name: valutazioni
+  column_name: valutatore_id
+  ordinal_position: 3
+  data_type: bigint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: true
+  is_unique: false
+  declared_relationship:
+  - target: hr.dipendenti.dipendente_id
+    status: declared
+    match_percentage: 100.0
+    orphan_count: 0
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: internal_identifier
+  data_subject: employee
+  confidence: 0.93
+  rationale: Identificativo tecnico che abilita join verso record riferiti a una persona; non è significativo isolatamente
+    ma consente collegamento.
+  detection_methods:
+  - column_context
+  - relationship_analysis
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=30; non_null=30; distinct=30
+  - pattern=technical_identifier
+  masking_rule: preserve_technical_key
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies:
+  - hr.dipendenti.dipendente_id
+- schema_name: hr
+  table_name: valutazioni
+  column_name: anno
+  ordinal_position: 4
+  data_type: smallint
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: employment_information
+  data_subject: employee
+  confidence: 0.92
+  rationale: Informazione professionale, retributiva, di presenza o valutazione associata a un dipendente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=30; non_null=30; distinct=1
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: valutazioni
+  column_name: punteggio
+  ordinal_position: 5
+  data_type: numeric
+  nullable: false
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-indiretta
+  data_domain: employment_information
+  data_subject: employee
+  confidence: 0.92
+  rationale: Informazione professionale, retributiva, di presenza o valutazione associata a un dipendente.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  evidence:
+  - row_count=30; non_null=30; distinct=5
+  masking_rule: preserve_value
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []
+- schema_name: hr
+  table_name: valutazioni
+  column_name: commento
+  ordinal_position: 6
+  data_type: text
+  nullable: true
+  is_primary_key: false
+  is_foreign_key: false
+  is_unique: false
+  declared_relationship: []
+  logical_relationship: []
+  pii_category: PII-nascosta
+  data_domain: free_text_with_pii
+  data_subject: employee
+  confidence: 0.99
+  rationale: Il testo libero contiene pattern PII e nomi noti; richiede futura redaction multipattern e revisione dei limiti
+    regex.
+  detection_methods:
+  - column_context
+  - technical_metadata
+  - value_profiling
+  evidence:
+  - row_count=30; non_null=30; distinct=15
+  - pattern=email,person_name,free_text_pii
+  masking_rule: redact_free_text
+  consistency_group: null
+  review_status: auto_proposed
+  review_note: Proposta automatica da sottoporre al normale ciclo di governance.
+  dependencies: []

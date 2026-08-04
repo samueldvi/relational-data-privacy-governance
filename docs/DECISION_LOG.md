@@ -66,3 +66,60 @@ in un'unica transazione e non modifica la struttura del database.
 pubblici o dati hardcoded potrebbero invece coincidere con persone reali. La
 costruzione completa prima del caricamento rende inoltre ripetibile l'ordine
 delle operazioni e impedisce carichi parziali in caso di errore.
+
+---
+
+## D-006 — Registry privacy come fonte primaria e fallback conservativo
+
+**Stato:** approvata
+
+**Decisione:** usare `config/pii_registry.yml` come fonte strutturata primaria
+per tutte le 109 colonne e generare da essa catalogo CSV e documentazione
+Markdown. Le regole combinano inventario, profiling, contesto e override; un
+caso non risolto con motivazione concreta deve diventare `Dubbio` con stato
+`review_required`, mai `Non-PII` per semplice assenza di pattern.
+
+**Motivazione:** la completezza della copertura prevale sull'automazione. Un
+falso negativo lascerebbe PII esposta, mentre un dubbio esplicito conserva
+evidenza, rischio e responsabilità della revisione umana.
+
+---
+
+## D-007 — Derivazione HMAC namespaced e collisioni deterministiche
+
+**Stato:** approvata
+
+**Decisione:** derivare ogni pseudonimo con HMAC-SHA-256 su namespace, valore
+normalizzato e, solo in caso di collisione, contatore di retry. Elaborare gli
+input distinti in ordine normalizzato, mantenere il mapping esclusivamente in
+memoria e separare i namespace per dominio e soggetto. Gli IBAN sintetici usano
+ABI e CAB `00000`, numero di conto derivato e checksum MOD-97 valido.
+
+**Motivazione:** la separazione impedisce correlazioni involontarie tra domini
+o soggetti, l'ordinamento rende il risultato indipendente dall'ordine delle
+righe e il contatore risolve collisioni senza affidarsi alla sola probabilità.
+ABI e CAB nulli mantengono il formato ma rendono l'output non instradabile.
+
+---
+
+## D-008 — Redaction controllata del riferimento bancario ambiguo
+
+**Stato:** confirmed
+
+**Decisione:** per `billing.pagamenti.riferimento_bancario` mantenere la
+classificazione `Dubbio`, ma autorizzare in fase di caricamento masked la
+strategia versionata `redact_detected_patterns`. La redaction copre almeno
+codici fiscali, IBAN, email, telefoni, carte parziali e riferimenti bancari
+riconoscibili. Non viene applicata una pseudonimizzazione uniforme all'intero
+valore.
+
+**Motivazione:** la colonna contiene riferimenti eterogenei e può includere dati
+personali o bancari. Preservarla integralmente non è accettabile, mentre non ci
+sono evidenze sufficienti per scegliere una trasformazione uniforme.
+
+**Rischio residuo:** valori sensibili non riconosciuti dalle regex potrebbero
+rimanere nel testo e richiedono controlli di discovery più avanzati in
+produzione.
+
+**Fonte:** approvazione esplicita del responsabile del progetto durante la
+revisione del caricamento masked.

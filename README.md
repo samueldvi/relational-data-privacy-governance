@@ -60,3 +60,62 @@ Normalizzazioni usate nei confronti:
 - nomi: trim, lowercase e collasso degli spazi interni;
 - testo libero: normalizzazione delle terminazioni di riga e trim, senza
   modificare il contenuto analizzato dai pattern.
+
+## Privacy Metadata Registry e classificazione
+
+Per combinare inventario, profiling, relazioni e override approvati:
+
+```bash
+.venv/bin/python -m src.classify
+```
+
+Il comando valida la copertura di tutte le colonne e genera:
+
+- `config/pii_registry.yml`, fonte strutturata primaria e versionata;
+- `output/pii_catalog.csv`, catalogo tabellare rigenerabile;
+- `docs/CLASSIFICAZIONE_PII.md`, vista leggibile generata dal registry.
+
+L'inventario descrive la struttura, il profiling raccoglie evidenze aggregate,
+il registry applica regole contestuali e override, mentre la futura fase di
+masking consumerà `masking_rule` e `consistency_group` senza riclassificare i
+dati. I record `Dubbio` bloccano l'automazione fino alla revisione del data owner.
+
+## Regole e primitive di masking
+
+Le configurazioni versionate si validano e la documentazione si rigenera con:
+
+```bash
+.venv/bin/python -m src.masking
+```
+
+Le funzioni di `src/masking.py` sono pure e non richiedono PostgreSQL. Le
+pseudonimizzazioni richiedono `MASKING_SECRET` nell'ambiente, validato senza
+stamparne il valore, e usano HMAC-SHA-256 con namespace distinti. Le collisioni
+sono risolte deterministicamente su input normalizzati e ordinati, mantenendo
+il mapping soltanto in memoria.
+
+## Caricamento transazionale degli schemi masked
+
+La pipeline valida registry, consistency group, segreto e decisioni sulle
+colonne `Dubbio`, calcola l'ordine dalle foreign key, ricrea e popola i tre
+schemi `masked_*` in una sola transazione e valida struttura, cardinalità,
+constraint, relazioni e assenza di PII rilevabile. Le relazioni puramente
+logiche restano logiche e non vengono promosse a foreign key.
+
+```bash
+.venv/bin/python -m src.apply_masking --dry-run
+.venv/bin/python -m src.apply_masking
+.venv/bin/python -m src.apply_masking --validate-only
+.venv/bin/pytest tests/test_apply_masking.py tests/test_masked_database.py -q
+```
+
+`billing.pagamenti.riferimento_bancario` resta classificata `Dubbio`; la
+decisione confermata D-008 autorizza esclusivamente
+`redact_detected_patterns`. Il controllo copre codice fiscale, IBAN, email,
+telefono, carte parziali e riferimenti bancari riconoscibili. Rimane il rischio
+esplicito che valori sensibili non riconosciuti dalle regex restino nel testo.
+
+Il caricamento è idempotente a parità di `MASKING_SECRET`. Il manifest
+`output/masking_manifest.json` contiene soltanto metadati aggregati, checksum e
+statistiche di collisione; non contiene segreti, mapping né valori sorgente ed
+è escluso da Git come gli altri output rigenerabili.

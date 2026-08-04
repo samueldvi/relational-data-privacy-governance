@@ -1,0 +1,15 @@
+version: 1
+reference_date: 2026-08-04
+default_ambiguous_strategy: block
+ambiguous_columns:
+  billing.pagamenti.riferimento_bancario:
+    strategy: redact_detected_patterns
+    rationale: La colonna contiene riferimenti eterogenei e può includere dati personali o bancari; preservarla integralmente non è accettabile e non esistono evidenze per una pseudonimizzazione uniforme.
+    source: Approvazione esplicita del responsabile del progetto durante la revisione del caricamento masked
+    review_status: confirmed
+    residual_risk: Valori sensibili non riconosciuti dalle regex potrebbero rimanere nel testo.
+address_components:
+  via: mask_postal_address
+  cap: preserve_value
+  citta: preserve_value
+  provincia: preserve_value

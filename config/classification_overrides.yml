@@ -1,0 +1,42 @@
+version: 1
+overrides:
+  - column: billing.sconti.cod_rif
+    classification: PII-nascosta
+    domain: italian_tax_code
+    subject: customer
+    confidence: 1.0
+    rationale: Il nome è fuorviante, ma tutti i valori rispettano il formato fiscale e coincidono con crm.clienti.cod_fisc con match cross-tabella del 100%.
+    source: Decisione D-004 e verifica tecnica del profiling
+    review_status: confirmed
+  - column: billing.pagamenti.rif_esterno
+    classification: PII-nascosta
+    domain: email_address
+    subject: customer
+    confidence: 1.0
+    rationale: I valori hanno sintassi email, sono normalizzati lowercase e coincidono con crm.clienti.email con match cross-tabella del 100%.
+    source: Decisione D-004 e verifica tecnica del profiling
+    review_status: confirmed
+  - column: crm.campagne.email_template
+    classification: Non-PII
+    domain: business_metadata
+    subject: not_applicable
+    confidence: 1.0
+    rationale: Il contenuto usa segnaposto di template e non indirizzi personali effettivi; la forma simile a un'email non costituisce PII reale.
+    source: Falso positivo controllato approvato nel brief di progetto
+    review_status: false_positive_confirmed
+  - column: hr.reparti.responsabile_id
+    classification: PII-indiretta
+    domain: internal_identifier
+    subject: employee
+    confidence: 1.0
+    rationale: Identificativo che collega logicamente il reparto al dipendente responsabile con match completo e nessun orfano, senza FK dichiarata.
+    source: Decisione architetturale approvata e inventario tecnico
+    review_status: confirmed
+  - column: billing.fatture.cliente_id
+    classification: PII-indiretta
+    domain: internal_identifier
+    subject: customer
+    confidence: 1.0
+    rationale: Identificativo che collega logicamente la fattura al cliente con match completo e nessun orfano, senza FK dichiarata.
+    source: Decisione architetturale approvata e inventario tecnico
+    review_status: confirmed

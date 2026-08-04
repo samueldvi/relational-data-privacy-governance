@@ -14,17 +14,18 @@ from typing import Any
 from faker import Faker
 from psycopg import sql
 
+from src.domain.identifiers import (
+    CF_MONTH_CODES,
+    iban_mod97,
+    is_valid_italian_iban,
+    is_valid_tax_code,
+    tax_code_check_character,
+)
 from src.infrastructure.database.connection import get_connection
 
 
 DEFAULT_SEED = 20260804
 REFERENCE_DATE = date(2025, 12, 31)
-
-CF_ODD_VALUES = {
-    **dict(zip("0123456789", (1, 0, 5, 7, 9, 13, 15, 17, 19, 21))),
-    **dict(zip("ABCDEFGHIJKLMNOPQRSTUVWXYZ", (1, 0, 5, 7, 9, 13, 15, 17, 19, 21, 2, 4, 18, 20, 11, 3, 6, 8, 12, 14, 16, 10, 22, 25, 24, 23))),
-}
-CF_MONTH_CODES = "ABCDEHLMPRST"
 
 TABLE_COLUMNS: dict[str, tuple[str, ...]] = {
     "crm.clienti": ("cliente_id", "nome", "cognome", "email", "telefono", "cod_fisc", "data_nascita", "segmento", "data_registrazione"),
@@ -54,28 +55,6 @@ PRIMARY_KEYS = {
 }
 
 
-def tax_code_check_character(first_fifteen: str) -> str:
-    """Return the official Italian tax-code check character."""
-    if len(first_fifteen) != 15:
-        raise ValueError("A tax-code payload must contain 15 characters")
-    total = 0
-    for position, character in enumerate(first_fifteen, start=1):
-        if position % 2:
-            total += CF_ODD_VALUES[character]
-        else:
-            total += int(character) if character.isdigit() else ord(character) - 65
-    return chr(65 + total % 26)
-
-
-def is_valid_tax_code(value: str) -> bool:
-    if len(value) != 16 or not value.isalnum() or value != value.upper():
-        return False
-    try:
-        return tax_code_check_character(value[:15]) == value[-1]
-    except (KeyError, ValueError):
-        return False
-
-
 def synthetic_tax_code(rng: random.Random, used: set[str]) -> str:
     while True:
         prefix = "".join(rng.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for _ in range(6))
@@ -90,34 +69,17 @@ def synthetic_tax_code(rng: random.Random, used: set[str]) -> str:
             return value
 
 
-def _iban_mod97(value: str) -> int:
-    numeric = "".join(str(ord(char) - 55) if char.isalpha() else char for char in value)
-    remainder = 0
-    for character in numeric:
-        remainder = (remainder * 10 + int(character)) % 97
-    return remainder
-
-
 def synthetic_italian_iban(rng: random.Random, used: set[str]) -> str:
     while True:
         # ABI and CAB are deliberately zeroed: checksum-valid, but not routable.
         bban = rng.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ("0" * 10) + "".join(
             str(rng.randrange(10)) for _ in range(12)
         )
-        check_digits = 98 - _iban_mod97(bban + "IT00")
+        check_digits = 98 - iban_mod97(bban + "IT00")
         value = f"IT{check_digits:02d}{bban}"
         if value not in used:
             used.add(value)
             return value
-
-
-def is_valid_italian_iban(value: str) -> bool:
-    return (
-        len(value) == 27
-        and value.startswith("IT")
-        and value[2:].isalnum()
-        and _iban_mod97(value[4:] + value[:4]) == 1
-    )
 
 
 def _money(rng: random.Random, minimum: int, maximum: int) -> Decimal:

@@ -21,6 +21,30 @@ class MaskingSecretError(PrivacyGovernanceError):
     pass
 
 
+class MaskingError(PrivacyGovernanceError):
+    """Base error for deterministic masking rules."""
+
+
+class MissingSecretError(MaskingError):
+    pass
+
+
+class WeakSecretError(MaskingError):
+    pass
+
+
+class InvalidConfigurationError(ConfigurationError, MaskingError):
+    pass
+
+
+class UnsupportedFormatError(MaskingError):
+    pass
+
+
+class ReviewRequiredError(MaskingError):
+    pass
+
+
 class PipelineExecutionError(PrivacyGovernanceError):
     pass
 
@@ -29,7 +53,7 @@ class ValidationError(PrivacyGovernanceError):
     pass
 
 
-class UnresolvableCollisionError(PrivacyGovernanceError):
+class UnresolvableCollisionError(MaskingError):
     pass
 
 

@@ -11,8 +11,16 @@ from typing import Any, Callable
 
 from psycopg import sql
 
+from src.domain.identifiers import is_valid_italian_iban, is_valid_tax_code
+from src.domain.profiling.normalizers import (
+    normalize_email,
+    normalize_iban,
+    normalize_name,
+    normalize_phone,
+    normalize_tax_code,
+    normalize_text,
+)
 from src.infrastructure.database.connection import get_connection
-from src.generate_data import is_valid_italian_iban, is_valid_tax_code
 from src.inventory import SOURCE_SCHEMAS, collect_inventory
 
 
@@ -49,38 +57,6 @@ METADATA_KEYS = {
     "pattern_match_counts", "pattern_match_percentages", "sample_values",
     "sample_redaction_applied", "cross_table_matches", "profiling_notes",
 }
-
-
-def normalize_email(value: str) -> str:
-    """Trim and lowercase an email address."""
-    return value.strip().lower()
-
-
-def normalize_tax_code(value: str) -> str:
-    """Trim and uppercase an Italian tax code."""
-    return value.strip().upper()
-
-
-def normalize_iban(value: str) -> str:
-    """Remove whitespace and uppercase an IBAN."""
-    return re.sub(r"\s+", "", value).upper()
-
-
-def normalize_phone(value: str) -> str:
-    """Retain an optional leading plus and telephone digits only."""
-    stripped = value.strip()
-    prefix = "+" if stripped.startswith("+") else ""
-    return prefix + re.sub(r"\D", "", stripped)
-
-
-def normalize_name(value: str) -> str:
-    """Trim, lowercase and collapse internal whitespace for person names."""
-    return " ".join(value.strip().lower().split())
-
-
-def normalize_text(value: str) -> str:
-    """Apply minimal line-ending and surrounding-whitespace normalization."""
-    return value.replace("\r\n", "\n").strip()
 
 
 def _qualified_identifier(schema: str, table: str) -> sql.Composed:

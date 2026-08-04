@@ -20,7 +20,7 @@ def test_workflow_yaml_is_valid_and_has_stable_names() -> None:
 
 def test_workflow_triggers_cover_main_features_and_pull_requests() -> None:
     triggers = _workflow()["on"]
-    assert triggers["push"]["branches"] == ["main", "feature/**"]
+    assert triggers["push"]["branches"] == ["main", "feature/**", "refactor/**"]
     assert triggers["pull_request"]["branches"] == ["main"]
     assert "workflow_dispatch" in triggers
 
@@ -38,6 +38,7 @@ def test_workflow_runs_database_pipeline_tests_and_git_checks() -> None:
     commands = "\n".join(step.get("run", "") for step in steps)
     assert "psql" in commands and "--set ON_ERROR_STOP=1" in commands
     assert "python -m src.cli all" in commands
+    assert "python -m pytest tests/contract/test_architecture.py -q" in commands
     assert "pytest -q" in commands
     assert "git diff --check" in commands
     assert "git ls-files" in commands

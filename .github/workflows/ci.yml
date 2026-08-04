@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/**
+      - refactor/**
   pull_request:
     branches:
       - main
@@ -70,8 +71,11 @@ jobs:
       - name: Run end-to-end pipeline
         run: python -m src.cli all
 
+      - name: Enforce modular architecture boundaries
+        run: python -m pytest tests/contract/test_architecture.py -q
+
       - name: Run test suite
-        run: pytest -q
+        run: python -m pytest -q
 
       - name: Check patch whitespace
         run: git diff --check

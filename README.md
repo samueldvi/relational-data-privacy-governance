@@ -19,7 +19,7 @@ Il repository prepara concetti e controlli trasferibili verso Informatica Data P
 | Righe sintetiche sorgente / masked | 2.063 / 2.063 |
 | Regole di masking | 12 |
 | Consistency group | 9 |
-| Test automatici | 132 superati nella suite finale |
+| Test automatici | 159 superati nella suite finale |
 | Manifest | checksum per tabella e globale, deterministici |
 
 La suite verifica inoltre rollback completo, idempotenza con lo stesso secret,
@@ -30,19 +30,32 @@ relazioni dichiarate e logiche e assenza di PII rilevabile dalle regole note.
 
 ```mermaid
 flowchart LR
-    A["Synthetic Data"] --> B["Inventory"]
-    B --> C["Profiling"]
-    C --> D["Privacy Metadata Registry"]
-    D --> E["Classification"]
-    E --> F["Deterministic Masking"]
-    F --> G["Masked Schemas"]
-    G --> H["Validation"]
-    H --> I["Manifest"]
+    CLI["CLI"] --> APP["Application services"]
+    APP --> DOMAIN["Pure domain"]
+    APP --> PORTS["Repository ports"]
+    INFRA["Infrastructure adapters"] --> PORTS
+    INFRA --> DOMAIN
+    INFRA --> PG[("PostgreSQL 16")]
+    INFRA --> FILES["YAML / CSV / JSON"]
 ```
 
-La CLI orchestra i moduli esistenti senza duplicarne la logica. Le dipendenze
-fra tabelle sono ricavate dai metadati PostgreSQL; le due relazioni puramente
-logiche restano prive di foreign key anche negli schemi masked.
+La fase Synthetic Data alimenta il Privacy Metadata Registry e le successive
+validazioni tramite il flusso applicativo. La CLI chiama servizi applicativi iniettati dal composition root. L'application
+layer definisce l'ordine end-to-end una sola volta; il dominio contiene regole
+pure e l'infrastruttura incapsula PostgreSQL, configurazione e serializzazione.
+I dettagli e i vincoli verificati sono in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+### Architecture decisions
+
+- **Modular monolith:** un solo deploy mantiene semplice la transazione masked e
+  non introduce coordinamento distribuito senza un reale bisogno di scaling.
+- **Dependency inversion:** application usa porte; gli adapter concreti vengono
+  collegati solo da `src/bootstrap.py`.
+- **Pure domain:** normalizzazione, HMAC, collisioni, redaction e checksum non
+  leggono database, file o variabili d'ambiente.
+- **Test boundaries:** test unitari domain/application non richiedono PostgreSQL;
+  integrazione, contract architetturali e sicurezza restano separati.
 
 ## Quick start
 
@@ -85,14 +98,14 @@ mapping, pseudonimi o record completi.
 
 ## Componenti e output
 
-- `src/generate_data.py`: dataset sintetico riproducibile con seed esplicito;
-- `src/inventory.py`: 109 colonne, constraint e relazioni logiche;
-- `src/profile_columns.py`: pattern, normalizzazioni e confronti cross-tabella;
-- `src/classify.py`: classificazione completa e override di governance;
-- `src/masking.py`: primitive HMAC-SHA-256 e collision resolver batch;
-- `src/apply_masking.py`: DDL, caricamento e validazione in una transazione;
-- `src/masking_manifest.py`: canonicalizzazione e checksum;
-- `src/cli.py`: orchestrazione end-to-end e stato operativo.
+- `src/cli/`: parser e comandi di presentazione compatibili;
+- `src/application/`: servizi e orchestrazione end-to-end;
+- `src/domain/`: modelli e logica privacy deterministica pura;
+- `src/ports/`: contratti per database, configurazione, secret, clock e artefatti;
+- `src/infrastructure/`: adapter PostgreSQL, YAML/CSV/JSON, ambiente e tempo;
+- `src/bootstrap.py`: composition root;
+- `src/apply_masking.py`, `src/inventory.py`, `src/profile_columns.py` e
+  `src/classify.py`: entry point compatibili durante la migrazione incrementale.
 
 Gli artefatti rigenerabili sono salvati in `output/` e ignorati da Git. Il
 manifest contiene metadati aggregati, statistiche di collisione, controlli e

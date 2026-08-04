@@ -8,9 +8,8 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from src.generate_docs import write_classification_markdown
+from src.infrastructure.config.loader import load_yaml_path, write_yaml_path
 from src.inventory import generate_inventory
 from src.profile_columns import generate_profiling
 
@@ -48,8 +47,7 @@ CATALOG_FIELDS = (
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
-    with path.open(encoding="utf-8") as input_file:
-        return yaml.safe_load(input_file)
+    return load_yaml_path(path)
 
 
 def _load_inputs() -> tuple[list[dict[str, str]], dict[tuple[str, str, str], dict[str, Any]], list[dict[str, str]]]:
@@ -357,10 +355,7 @@ def _write_registry(records: list[dict[str, Any]]) -> None:
         },
         "columns": records,
     }
-    REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REGISTRY_PATH.write_text(
-        yaml.safe_dump(document, allow_unicode=True, sort_keys=False, width=120), encoding="utf-8"
-    )
+    write_yaml_path(REGISTRY_PATH, document, sort_keys=False, width=120)
 
 
 def _write_catalog(records: list[dict[str, Any]]) -> None:

@@ -11,7 +11,7 @@ from typing import Any
 
 from psycopg import sql
 
-from src.db import get_connection
+from src.infrastructure.database.connection import get_connection
 
 
 SOURCE_SCHEMAS = ("billing", "crm", "hr")

@@ -22,7 +22,8 @@ def test_readme_documents_architecture_quick_start_cli_security_and_limits() -> 
     ):
         assert required in README
     assert "Synthetic Data" in README and "Privacy Metadata Registry" in README
-    assert "132 superati nella suite finale" in README
+    assert "159 superati nella suite finale" in README
+    assert "docs/ARCHITECTURE.md" in README
 
 
 def test_readme_is_explicit_about_synthetic_data_and_informatica_scope() -> None:

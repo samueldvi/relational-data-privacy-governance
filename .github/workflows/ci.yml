@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_DB: privacy_governance_ci
+      POSTGRES_USER: privacy_ci
+      POSTGRES_PASSWORD: ci-only-synthetic-password-not-for-production
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      MASKING_SECRET: ci-only-synthetic-masking-secret-not-for-production-20260804
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: privacy_governance_ci
+          POSTGRES_USER: privacy_ci
+          POSTGRES_PASSWORD: ci-only-synthetic-password-not-for-production
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U privacy_ci -d privacy_governance_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install --requirement requirements.txt
+
+      - name: Wait for PostgreSQL
+        run: pg_isready --host "$POSTGRES_HOST" --port "$POSTGRES_PORT" --username "$POSTGRES_USER" --dbname "$POSTGRES_DB"
+
+      - name: Initialize database in script order
+        run: |
+          for sql_file in $(find sql -maxdepth 1 -type f -name '*.sql' | sort); do
+            PGPASSWORD="$POSTGRES_PASSWORD" psql \
+              --host "$POSTGRES_HOST" --port "$POSTGRES_PORT" \
+              --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+              --set ON_ERROR_STOP=1 --file "$sql_file"
+          done
+
+      - name: Run end-to-end pipeline
+        run: python -m src.cli all
+
+      - name: Run test suite
+        run: pytest -q
+
+      - name: Check patch whitespace
+        run: git diff --check
+
+      - name: Check tracked sensitive filenames
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$|(^|/)(credentials?|secrets?)(/|\.)|\.(dump|sql\.gz|pem|key|p12)$|(^|/)output/.*(mapping|pii.samples)' ; then
+            echo "Disallowed sensitive artifact is tracked."
+            exit 1
+          fi
+          test -z "$(git ls-files --error-unmatch .env 2>/dev/null || true)"

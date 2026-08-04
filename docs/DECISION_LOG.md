@@ -66,3 +66,19 @@ in un'unica transazione e non modifica la struttura del database.
 pubblici o dati hardcoded potrebbero invece coincidere con persone reali. La
 costruzione completa prima del caricamento rende inoltre ripetibile l'ordine
 delle operazioni e impedisce carichi parziali in caso di errore.
+
+---
+
+## D-006 — Registry privacy come fonte primaria e fallback conservativo
+
+**Stato:** approvata
+
+**Decisione:** usare `config/pii_registry.yml` come fonte strutturata primaria
+per tutte le 109 colonne e generare da essa catalogo CSV e documentazione
+Markdown. Le regole combinano inventario, profiling, contesto e override; un
+caso non risolto con motivazione concreta deve diventare `Dubbio` con stato
+`review_required`, mai `Non-PII` per semplice assenza di pattern.
+
+**Motivazione:** la completezza della copertura prevale sull'automazione. Un
+falso negativo lascerebbe PII esposta, mentre un dubbio esplicito conserva
+evidenza, rischio e responsabilità della revisione umana.

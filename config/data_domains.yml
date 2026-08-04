@@ -1,0 +1,154 @@
+version: 1
+domains:
+  person_name:
+    description: Nome o cognome riferibile a una persona fisica.
+    default_pii_category: PII-diretta
+    normalization: trim_lowercase_collapse_spaces
+    risk: Identificazione diretta e correlazione tra dataset.
+    planned_transformation: mask_person_name
+    limitations: Omonimie e nomi presenti nel testo libero richiedono analisi contestuale.
+    synthetic_examples: ["[REDACTED_NAME]"]
+  email_address:
+    description: Indirizzo email personale o professionale individuale.
+    default_pii_category: PII-diretta
+    normalization: trim_lowercase
+    risk: Contatto diretto e identificazione univoca frequente.
+    planned_transformation: mask_email
+    limitations: Alias condivisi e modelli di template richiedono revisione contestuale.
+    synthetic_examples: ["u***@example.test"]
+  phone_number:
+    description: Numero telefonico riferibile a una persona.
+    default_pii_category: PII-diretta
+    normalization: digits_with_optional_plus
+    risk: Contatto diretto e possibile correlazione esterna.
+    planned_transformation: mask_phone
+    limitations: Numeri aziendali condivisi possono non identificare una singola persona.
+    synthetic_examples: ["+39******001"]
+  italian_tax_code:
+    description: Codice fiscale italiano con struttura e carattere di controllo validi.
+    default_pii_category: PII-diretta
+    normalization: trim_uppercase
+    risk: Identificatore nazionale stabile ad alto impatto.
+    planned_transformation: mask_tax_code
+    limitations: La validità formale non dimostra l'assegnazione reale del codice.
+    synthetic_examples: ["ABCDEF**********"]
+  italian_iban:
+    description: Coordinate IBAN associate a un conto o intestatario.
+    default_pii_category: PII-diretta
+    normalization: remove_spaces_uppercase
+    risk: Informazione finanziaria direttamente correlabile al titolare.
+    planned_transformation: mask_iban
+    limitations: Il checksum valido non dimostra che il conto sia esistente.
+    synthetic_examples: ["IT*************************"]
+  postal_address:
+    description: Indirizzo o componente postale riferibile a una persona.
+    default_pii_category: PII-diretta
+    normalization: trim_lowercase_collapse_spaces
+    risk: Localizzazione e identificazione dell'interessato.
+    planned_transformation: mask_postal_address
+    limitations: Singole componenti geografiche possono avere rischio inferiore all'indirizzo completo.
+    synthetic_examples: ["[REDACTED_ADDRESS]"]
+  birth_date:
+    description: Data di nascita usata come quasi-identificatore.
+    default_pii_category: PII-indiretta
+    normalization: iso_date
+    risk: Re-identificazione in combinazione con altri attributi.
+    planned_transformation: shift_birth_date
+    limitations: La trasformazione futura deve preservare l'utilità per fasce di età.
+    synthetic_examples: ["1980-**-**"]
+  free_text_with_pii:
+    description: Testo non strutturato contenente pattern o nomi riferibili a persone.
+    default_pii_category: PII-nascosta
+    normalization: minimal_text_normalization
+    risk: Presenza imprevedibile di più categorie PII nella stessa cella.
+    planned_transformation: redact_free_text
+    limitations: Regex e dizionari non garantiscono copertura completa senza NER.
+    synthetic_examples: ["Contattare [REDACTED_NAME] a [REDACTED_EMAIL]"]
+  internal_identifier:
+    description: Chiave tecnica o identificativo interno usato per collegare record.
+    default_pii_category: PII-indiretta
+    normalization: preserve_exact
+    risk: Collegamento indiretto a interessati tramite join o sistemi esterni.
+    planned_transformation: preserve_technical_key
+    limitations: Il rischio dipende dalla semantica e dalle relazioni della tabella.
+    synthetic_examples: ["1001"]
+  bank_reference:
+    description: Riferimento operativo bancario con contenuto potenzialmente eterogeneo.
+    default_pii_category: Dubbio
+    normalization: trim_uppercase
+    risk: Può incorporare identificatori fiscali o riferimenti correlabili a persone.
+    planned_transformation: review_before_masking
+    limitations: Il formato varia per metodo e istituto; serve validazione del data owner.
+    synthetic_examples: ["SYNREF********"]
+  consent_information:
+    description: Preferenza, evento o stato di consenso associato a un cliente.
+    default_pii_category: PII-indiretta
+    normalization: preserve_exact
+    risk: Rivela scelte privacy riferibili a un interessato.
+    planned_transformation: preserve_value
+    limitations: L'attributo isolato può essere non identificante ma resta collegato tramite chiave.
+    synthetic_examples: ["marketing", "false"]
+  employment_information:
+    description: Informazione relativa al rapporto di lavoro, presenza o valutazione.
+    default_pii_category: PII-indiretta
+    normalization: preserve_exact
+    risk: Profilazione professionale ed economica del dipendente.
+    planned_transformation: preserve_value
+    limitations: L'impatto dipende dal mantenimento delle chiavi e dal contesto analitico.
+    synthetic_examples: ["presenza", "2025"]
+  financial_transaction:
+    description: Attributo relativo a fattura, pagamento, ordine o sconto.
+    default_pii_category: PII-indiretta
+    normalization: preserve_exact
+    risk: Profilazione economica quando collegato a cliente o dipendente.
+    planned_transformation: preserve_value
+    limitations: Importi aggregati o realmente isolati possono essere Non-PII.
+    synthetic_examples: ["125.50", "pagata"]
+  business_metadata:
+    description: Metadato operativo o descrittivo non riferibile a una persona.
+    default_pii_category: Non-PII
+    normalization: preserve_exact
+    risk: Basso, salvo uso contestuale non rappresentato nel dataset.
+    planned_transformation: preserve_value
+    limitations: La semantica applicativa deve essere rivalutata se cambia il processo.
+    synthetic_examples: ["Campagna sintetica", "bonifico"]
+  aggregate_metric:
+    description: Misura aggregata priva di dettaglio individuale nel modello corrente.
+    default_pii_category: Non-PII
+    normalization: preserve_exact
+    risk: Possibile inferenza solo con gruppi molto piccoli non presenti nel dataset.
+    planned_transformation: preserve_value
+    limitations: Devono essere controllate granularità e soglie in produzione.
+    synthetic_examples: ["101250.00"]
+  technical_timestamp:
+    description: Data o timestamp tecnico di un evento applicativo.
+    default_pii_category: Non-PII
+    normalization: iso_datetime
+    risk: Può diventare quasi-identificatore se collegato a una persona.
+    planned_transformation: preserve_value
+    limitations: La categoria deve considerare la tabella e la chiave del soggetto.
+    synthetic_examples: ["2025-01-01T10:00:00"]
+  status_code:
+    description: Stato, tipo o codice enumerativo di processo.
+    default_pii_category: Non-PII
+    normalization: trim_lowercase
+    risk: Può rivelare comportamento individuale quando associato a un soggetto.
+    planned_transformation: preserve_value
+    limitations: Non interpretare lo stato senza il contesto della tabella.
+    synthetic_examples: ["completato"]
+  geographic_information:
+    description: Località o componente geografica meno granulare di un indirizzo completo.
+    default_pii_category: PII-indiretta
+    normalization: trim_lowercase_collapse_spaces
+    risk: Quasi-identificatore in combinazione con altri attributi.
+    planned_transformation: preserve_value
+    limitations: Provincia e città isolate hanno rischio diverso da via e numero civico.
+    synthetic_examples: ["Citta Test 01"]
+  contact_value:
+    description: Valore di contatto polimorfo governato da una colonna discriminante.
+    default_pii_category: PII-diretta
+    normalization: conditional_by_contact_type
+    risk: Contiene email o telefono direttamente utilizzabili.
+    planned_transformation: mask_contact_value
+    limitations: La trasformazione deve leggere il tipo di contatto della stessa riga.
+    synthetic_examples: ["c***@example.test", "+39******001"]

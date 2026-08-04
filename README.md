@@ -60,3 +60,22 @@ Normalizzazioni usate nei confronti:
 - nomi: trim, lowercase e collasso degli spazi interni;
 - testo libero: normalizzazione delle terminazioni di riga e trim, senza
   modificare il contenuto analizzato dai pattern.
+
+## Privacy Metadata Registry e classificazione
+
+Per combinare inventario, profiling, relazioni e override approvati:
+
+```bash
+.venv/bin/python -m src.classify
+```
+
+Il comando valida la copertura di tutte le colonne e genera:
+
+- `config/pii_registry.yml`, fonte strutturata primaria e versionata;
+- `output/pii_catalog.csv`, catalogo tabellare rigenerabile;
+- `docs/CLASSIFICAZIONE_PII.md`, vista leggibile generata dal registry.
+
+L'inventario descrive la struttura, il profiling raccoglie evidenze aggregate,
+il registry applica regole contestuali e override, mentre la futura fase di
+masking consumerà `masking_rule` e `consistency_group` senza riclassificare i
+dati. I record `Dubbio` bloccano l'automazione fino alla revisione del data owner.

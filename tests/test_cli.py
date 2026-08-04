@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from argparse import Namespace
 from pathlib import Path
 
@@ -23,7 +24,7 @@ def test_help_is_available(arguments: list[str], capsys: pytest.CaptureFixture[s
 
 def test_module_is_executable_from_repository_root() -> None:
     result = subprocess.run(
-        [".venv/bin/python", "-m", "src.cli", "--help"],
+        [sys.executable, "-m", "src.cli", "--help"],
         capture_output=True, text=True, check=True, timeout=10,
     )
     assert "{generate,inventory,profile,classify,status,mask,validate,all}" in result.stdout

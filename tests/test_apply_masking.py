@@ -4,6 +4,7 @@ import json
 import os
 import secrets
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -133,7 +134,7 @@ def test_commands_are_executable_from_repository_root() -> None:
         ("--validate-only", "Masked database valid: 20 tables, 2063 rows"),
     ):
         result = subprocess.run(
-            [".venv/bin/python", "-m", "src.apply_masking", option],
+            [sys.executable, "-m", "src.apply_masking", option],
             capture_output=True, text=True, check=True, timeout=30,
         )
         assert expected in result.stdout

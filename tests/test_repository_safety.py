@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -10,7 +11,7 @@ from scripts.check_repository_safety import scan_files
 
 def test_current_repository_passes_safety_check() -> None:
     result = subprocess.run(
-        [".venv/bin/python", "scripts/check_repository_safety.py"],
+        [sys.executable, "scripts/check_repository_safety.py"],
         capture_output=True, text=True, check=True, timeout=20,
     )
     assert "0 violations" in result.stdout

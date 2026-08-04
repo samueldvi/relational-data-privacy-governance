@@ -37,3 +37,26 @@ Il comando legge esclusivamente i metadati dei tre schemi sorgente e produce
 `output/inventory.csv` e `output/logical_relationships.csv`. Gli output sono
 deterministici, non contengono campioni di dati né credenziali e restano esclusi
 da Git. Le relazioni suggerite non modificano i constraint del database.
+
+## Profiling delle colonne
+
+Per rigenerare le metriche aggregate e le evidenze tecniche di pattern:
+
+```bash
+.venv/bin/python -m src.profile_columns
+```
+
+Il risultato è `output/profiling_results.json`, ordinato e deterministico. I
+campioni sospetti sono limitati a 20 per colonna e redatti prima della scrittura.
+Il profiler confronta inoltre valori normalizzati tra colonne compatibili, ma
+non assegna ancora alcuna classificazione PII definitiva.
+
+Normalizzazioni usate nei confronti:
+
+- email: trim e conversione lowercase;
+- codice fiscale: trim e conversione uppercase;
+- IBAN: rimozione degli spazi e conversione uppercase;
+- telefono: conservazione dell'eventuale `+` iniziale e delle sole cifre;
+- nomi: trim, lowercase e collasso degli spazi interni;
+- testo libero: normalizzazione delle terminazioni di riga e trim, senza
+  modificare il contenuto analizzato dai pattern.

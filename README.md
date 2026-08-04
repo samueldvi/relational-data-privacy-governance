@@ -180,3 +180,11 @@ git diff --check
 Le decisioni effettivamente approvate sono versionate in
 [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md); le regole sono descritte in
 [`docs/REGOLE_MASCHERAMENTO.md`](docs/REGOLE_MASCHERAMENTO.md).
+
+## Release
+
+La baseline `v1.0.0` è descritta nelle
+[`release notes`](docs/RELEASE_NOTES_v1.0.0.md) e nel
+[`CHANGELOG.md`](CHANGELOG.md). I gate verificati e quelli ancora richiesti
+prima della pubblicazione sono registrati nella
+[`release checklist`](docs/RELEASE_CHECKLIST.md).

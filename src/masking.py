@@ -271,7 +271,8 @@ def shift_birth_date(
         raise UnsupportedFormatError("Birth date must be a date value.")
     if value > reference_date:
         raise UnsupportedFormatError("Birth date cannot be after the explicit reference date.")
-    offset = int.from_bytes(_digest(secret, namespace, value.isoformat())[:2], "big") % 61 - 30
+    raw_offset = int.from_bytes(_digest(secret, namespace, value.isoformat())[:2], "big") % 60
+    offset = raw_offset - 30 if raw_offset < 30 else raw_offset - 29
     shifted = value + timedelta(days=offset)
     return min(shifted, reference_date)
 

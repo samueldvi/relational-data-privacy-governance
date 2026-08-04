@@ -99,3 +99,27 @@ ABI e CAB `00000`, numero di conto derivato e checksum MOD-97 valido.
 o soggetti, l'ordinamento rende il risultato indipendente dall'ordine delle
 righe e il contatore risolve collisioni senza affidarsi alla sola probabilità.
 ABI e CAB nulli mantengono il formato ma rendono l'output non instradabile.
+
+---
+
+## D-008 — Redaction controllata del riferimento bancario ambiguo
+
+**Stato:** confirmed
+
+**Decisione:** per `billing.pagamenti.riferimento_bancario` mantenere la
+classificazione `Dubbio`, ma autorizzare in fase di caricamento masked la
+strategia versionata `redact_detected_patterns`. La redaction copre almeno
+codici fiscali, IBAN, email, telefoni, carte parziali e riferimenti bancari
+riconoscibili. Non viene applicata una pseudonimizzazione uniforme all'intero
+valore.
+
+**Motivazione:** la colonna contiene riferimenti eterogenei e può includere dati
+personali o bancari. Preservarla integralmente non è accettabile, mentre non ci
+sono evidenze sufficienti per scegliere una trasformazione uniforme.
+
+**Rischio residuo:** valori sensibili non riconosciuti dalle regex potrebbero
+rimanere nel testo e richiedono controlli di discovery più avanzati in
+produzione.
+
+**Fonte:** approvazione esplicita del responsabile del progetto durante la
+revisione del caricamento masked.

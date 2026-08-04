@@ -92,5 +92,30 @@ Le funzioni di `src/masking.py` sono pure e non richiedono PostgreSQL. Le
 pseudonimizzazioni richiedono `MASKING_SECRET` nell'ambiente, validato senza
 stamparne il valore, e usano HMAC-SHA-256 con namespace distinti. Le collisioni
 sono risolte deterministicamente su input normalizzati e ordinati, mantenendo
-il mapping soltanto in memoria. In questa fase gli schemi `masked_*` non vengono
-ancora popolati.
+il mapping soltanto in memoria.
+
+## Caricamento transazionale degli schemi masked
+
+La pipeline valida registry, consistency group, segreto e decisioni sulle
+colonne `Dubbio`, calcola l'ordine dalle foreign key, ricrea e popola i tre
+schemi `masked_*` in una sola transazione e valida struttura, cardinalità,
+constraint, relazioni e assenza di PII rilevabile. Le relazioni puramente
+logiche restano logiche e non vengono promosse a foreign key.
+
+```bash
+.venv/bin/python -m src.apply_masking --dry-run
+.venv/bin/python -m src.apply_masking
+.venv/bin/python -m src.apply_masking --validate-only
+.venv/bin/pytest tests/test_apply_masking.py tests/test_masked_database.py -q
+```
+
+`billing.pagamenti.riferimento_bancario` resta classificata `Dubbio`; la
+decisione confermata D-008 autorizza esclusivamente
+`redact_detected_patterns`. Il controllo copre codice fiscale, IBAN, email,
+telefono, carte parziali e riferimenti bancari riconoscibili. Rimane il rischio
+esplicito che valori sensibili non riconosciuti dalle regex restino nel testo.
+
+Il caricamento è idempotente a parità di `MASKING_SECRET`. Il manifest
+`output/masking_manifest.json` contiene soltanto metadati aggregati, checksum e
+statistiche di collisione; non contiene segreti, mapping né valori sorgente ed
+è escluso da Git come gli altri output rigenerabili.

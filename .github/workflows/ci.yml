@@ -104,3 +104,40 @@ jobs:
             exit 1
           fi
           test -z "$(git ls-files --error-unmatch .env 2>/dev/null || true)"
+
+  container:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_DB: privacy_governance_container_ci
+      POSTGRES_USER: privacy_container_ci
+      POSTGRES_PASSWORD: ci-only-synthetic-container-password-not-for-production
+      POSTGRES_PORT: "5432"
+      MASKING_SECRET: ci-only-synthetic-container-masking-secret-not-for-production-20260805
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build application image
+        run: docker compose build privacy-pipeline
+
+      - name: Verify image contains no local secret files or secret environment
+        run: |
+          test -z "$(docker image inspect relational-data-privacy-governance:local --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -E '^(POSTGRES_PASSWORD|MASKING_SECRET)=' || true)"
+          docker run --rm --entrypoint sh relational-data-privacy-governance:local -c 'test ! -e /app/.env'
+          docker run --rm relational-data-privacy-governance:local python -c 'import importlib.util; raise SystemExit(importlib.util.find_spec("pytest") is not None)'
+
+      - name: Start healthy PostgreSQL
+        run: docker compose up --detach --wait postgres
+
+      - name: Run container CLI and end-to-end pipeline
+        run: |
+          docker compose run --rm privacy-pipeline python -m src.cli status
+          docker compose run --rm privacy-pipeline python -m src.cli all
+          docker compose run --rm privacy-pipeline python -m src.cli drift --check
+
+      - name: Run repository safety check
+        run: python scripts/check_repository_safety.py
+
+      - name: Stop container services
+        if: always()
+        run: docker compose down --volumes

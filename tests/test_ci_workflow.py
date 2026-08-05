@@ -14,7 +14,7 @@ def _workflow() -> dict:
 def test_workflow_yaml_is_valid_and_has_stable_names() -> None:
     workflow = _workflow()
     assert workflow["name"] == "CI"
-    assert set(workflow["jobs"]) == {"tests"}
+    assert set(workflow["jobs"]) == {"tests", "container"}
 
 
 def test_workflow_triggers_cover_main_features_and_pull_requests() -> None:

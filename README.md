@@ -19,7 +19,7 @@ Il repository prepara concetti e controlli trasferibili verso Informatica Data P
 | Righe sintetiche sorgente / masked | 2.063 / 2.063 |
 | Regole di masking | 12 |
 | Consistency group | 9 |
-| Test automatici | 171 superati dopo l'introduzione del controllo drift |
+| Test automatici | 175 superati dopo drift detection e containerizzazione |
 | Manifest | checksum per tabella e globale, deterministici |
 
 La suite verifica inoltre rollback completo, idempotenza con lo stesso secret,
@@ -75,6 +75,24 @@ Il container inizializza gli script `sql/00_...`–`sql/05_...` solo alla prima
 creazione del volume. Per una validazione controllata da ambiente pulito usare
 lo script documentato in `scripts/validate_clean_environment.sh`; il reset non
 è mai implicito.
+
+### Container applicativo
+
+L'immagine applicativa usa Python 3.12 slim pinning per digest, installa solo le
+dipendenze runtime e opera come UID/GID `10001`. Il root filesystem è read-only;
+solo `/tmp`, `output/` e le copie effimere di `config/` e `docs/` sono scrivibili.
+`.env`, cache, test e output locali sono esclusi dal build context. I secret sono
+passati solo a runtime da Compose.
+
+```bash
+docker compose build privacy-pipeline
+docker compose run --rm privacy-pipeline python -m src.cli status
+docker compose run --rm privacy-pipeline python -m src.cli all
+```
+
+Il servizio attende l'healthcheck PostgreSQL. `pipeline_output` conserva solo
+gli artefatti rigenerabili; `docker compose down --volumes` rimuove database e
+output containerizzati quando è richiesto un reset esplicito.
 
 ## CLI
 
@@ -169,7 +187,8 @@ connessione al database o esecuzione del masking.
 ├── src/                     # pipeline e CLI Python
 ├── tests/                   # test unitari, integrazione, CLI, CI e sicurezza
 ├── compose.yml
-├── requirements.txt
+├── requirements-runtime.txt  # dipendenze minime dell'immagine
+├── requirements.txt          # runtime + test
 └── README.md
 ```
 
@@ -192,7 +211,8 @@ git diff --check
 
 La baseline iniziale misurata sul branch di hardening è `23,6%` per i soli 14
 test unitari e `87,7%` per la suite completa iniziale di 159 test con
-PostgreSQL. Dopo il blocco schema drift, 171 test raggiungono `88,3%`. Il gate
+PostgreSQL. Dopo il blocco schema drift, 171 test raggiungono `88,3%`; i
+controlli statici del container portano la suite a 175 test. Il gate
 versionato usa `fail_under = 87`: mantiene un margine minimo per gli
 arrotondamenti, ma fallisce in caso di regressione sostanziale rispetto alla
 baseline verificata. `coverage.xml` è generato per le integrazioni esterne e

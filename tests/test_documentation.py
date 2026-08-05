@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 README = Path("README.md").read_text(encoding="utf-8")
@@ -27,7 +28,8 @@ def test_readme_documents_architecture_quick_start_cli_security_and_limits() -> 
     ):
         assert required in README
     assert "Synthetic Data" in README and "Privacy Metadata Registry" in README
-    assert "159 superati nella suite finale" in README
+    test_count = re.search(r"\| Test automatici \| (\d+) superati", README)
+    assert test_count and int(test_count.group(1)) >= 159
     assert "docs/ARCHITECTURE.md" in README
 
 

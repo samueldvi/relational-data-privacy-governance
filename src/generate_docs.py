@@ -6,7 +6,6 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-
 DOCUMENT_PATH = Path("docs/CLASSIFICAZIONE_PII.md")
 
 
@@ -30,8 +29,7 @@ def render_classification_markdown(records: list[dict[str, Any]]) -> str:
     false_positives = [record for record in records if record["review_status"] == "false_positive_confirmed"]
     hidden = [record for record in records if record["pii_category"] == "PII-nascosta"]
     relevant_relationships = [
-        record for record in records
-        if record["declared_relationship"] or record["logical_relationship"]
+        record for record in records if record["declared_relationship"] or record["logical_relationship"]
     ]
 
     sections = [
@@ -61,53 +59,94 @@ def render_classification_markdown(records: list[dict[str, Any]]) -> str:
         "",
         _table(
             ["Colonna", "Dominio", "Confidence", "Motivazione", "Revisione richiesta"],
-            [[
-                f"{r['schema_name']}.{r['table_name']}.{r['column_name']}", r["data_domain"],
-                f"{r['confidence']:.2f}", r["rationale"], r["review_note"],
-            ] for r in doubtful],
-        ) if doubtful else "Nessuna colonna classificata come Dubbio.",
+            [
+                [
+                    f"{r['schema_name']}.{r['table_name']}.{r['column_name']}",
+                    r["data_domain"],
+                    f"{r['confidence']:.2f}",
+                    r["rationale"],
+                    r["review_note"],
+                ]
+                for r in doubtful
+            ],
+        )
+        if doubtful
+        else "Nessuna colonna classificata come Dubbio.",
         "",
         "## Falsi positivi confermati",
         "",
         _table(
             ["Colonna", "Dominio", "Motivazione"],
-            [[f"{r['schema_name']}.{r['table_name']}.{r['column_name']}", r["data_domain"], r["rationale"]]
-             for r in false_positives],
-        ) if false_positives else "Nessun falso positivo confermato.",
+            [
+                [f"{r['schema_name']}.{r['table_name']}.{r['column_name']}", r["data_domain"], r["rationale"]]
+                for r in false_positives
+            ],
+        )
+        if false_positives
+        else "Nessun falso positivo confermato.",
         "",
         "## PII nascoste",
         "",
         _table(
             ["Colonna", "Dominio", "Soggetto", "Regola prevista", "Stato"],
-            [[
-                f"{r['schema_name']}.{r['table_name']}.{r['column_name']}", r["data_domain"],
-                r["data_subject"], r["masking_rule"], r["review_status"],
-            ] for r in hidden],
+            [
+                [
+                    f"{r['schema_name']}.{r['table_name']}.{r['column_name']}",
+                    r["data_domain"],
+                    r["data_subject"],
+                    r["masking_rule"],
+                    r["review_status"],
+                ]
+                for r in hidden
+            ],
         ),
         "",
         "## Relazioni rilevanti",
         "",
         _table(
             ["Colonna", "Relazione dichiarata", "Relazione logica"],
-            [[
-                f"{r['schema_name']}.{r['table_name']}.{r['column_name']}",
-                ", ".join(item["target"] for item in r["declared_relationship"]) or "—",
-                ", ".join(f"{item['target']} ({item['status']})" for item in r["logical_relationship"]) or "—",
-            ] for r in relevant_relationships],
+            [
+                [
+                    f"{r['schema_name']}.{r['table_name']}.{r['column_name']}",
+                    ", ".join(item["target"] for item in r["declared_relationship"]) or "—",
+                    ", ".join(f"{item['target']} ({item['status']})" for item in r["logical_relationship"]) or "—",
+                ]
+                for r in relevant_relationships
+            ],
         ),
         "",
         "## Catalogo completo",
         "",
         _table(
             [
-                "Schema", "Tabella", "Colonna", "Categoria", "Dominio", "Soggetto",
-                "Confidence", "Masking rule", "Consistency group", "Revisione", "Motivazione",
+                "Schema",
+                "Tabella",
+                "Colonna",
+                "Categoria",
+                "Dominio",
+                "Soggetto",
+                "Confidence",
+                "Masking rule",
+                "Consistency group",
+                "Revisione",
+                "Motivazione",
             ],
-            [[
-                r["schema_name"], r["table_name"], r["column_name"], r["pii_category"],
-                r["data_domain"], r["data_subject"], f"{r['confidence']:.2f}",
-                r["masking_rule"], r["consistency_group"], r["review_status"], r["rationale"],
-            ] for r in records],
+            [
+                [
+                    r["schema_name"],
+                    r["table_name"],
+                    r["column_name"],
+                    r["pii_category"],
+                    r["data_domain"],
+                    r["data_subject"],
+                    f"{r['confidence']:.2f}",
+                    r["masking_rule"],
+                    r["consistency_group"],
+                    r["review_status"],
+                    r["rationale"],
+                ]
+                for r in records
+            ],
         ),
         "",
         "## Limiti",
@@ -125,8 +164,6 @@ def render_classification_markdown(records: list[dict[str, Any]]) -> str:
     return "\n".join(sections)
 
 
-def write_classification_markdown(
-    records: list[dict[str, Any]], path: Path = DOCUMENT_PATH
-) -> None:
+def write_classification_markdown(records: list[dict[str, Any]], path: Path = DOCUMENT_PATH) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render_classification_markdown(records), encoding="utf-8")

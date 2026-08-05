@@ -9,7 +9,8 @@ from src.shared.errors import RegistryValidationError
 
 class ClassificationService:
     def __init__(
-        self, generate_classification: Callable[[], list[dict[str, Any]]],
+        self,
+        generate_classification: Callable[[], list[dict[str, Any]]],
         expected_columns: int = 109,
     ) -> None:
         self._generate_classification = generate_classification
@@ -24,6 +25,7 @@ class ClassificationService:
         categories = Counter(record["pii_category"] for record in records)
         statuses = Counter(record["review_status"] for record in records)
         return {
-            "columns": len(records), "categories": dict(sorted(categories.items())),
+            "columns": len(records),
+            "categories": dict(sorted(categories.items())),
             "statuses": dict(sorted(statuses.items())),
         }

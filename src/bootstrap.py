@@ -35,7 +35,8 @@ def build_application() -> ApplicationContext:
         classification=ClassificationService(generate_classification),
         masking=MaskingService(apply_masking, dry_run_plan, validate_only),
         validation=ValidationService(
-            validate_only, manifest_repository.load,
+            validate_only,
+            manifest_repository.load,
             lambda path: apply_masking(manifest_path=path),
         ),
         status=StatusService(ProjectStatusProvider(connection_factory()).snapshot),

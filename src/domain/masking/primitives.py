@@ -26,7 +26,6 @@ from src.shared.errors import (
     WeakSecretError,
 )
 
-
 MINIMUM_SECRET_LENGTH = 32
 EMAIL_PATTERN = re.compile(r"^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,}$", re.IGNORECASE)
 EMAIL_IN_TEXT_PATTERN = re.compile(r"[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.IGNORECASE)
@@ -70,7 +69,7 @@ def _digest(secret: str, namespace: str, normalized_value: str, counter: int = 0
     if not namespace.strip():
         raise InvalidConfigurationError("A non-empty masking namespace is required.")
     retry = f":retry:{counter}" if counter else ""
-    message = f"{namespace}:{normalized_value}{retry}".encode("utf-8")
+    message = f"{namespace}:{normalized_value}{retry}".encode()
     return hmac.new(key, message, hashlib.sha256).digest()
 
 
@@ -92,7 +91,9 @@ def normalize_tax_code(value: str) -> str:
     if not normalized:
         return ""
     if not is_valid_tax_code(normalized):
-        raise UnsupportedFormatError("Italian tax code must be 16 alphanumeric characters with a valid check character.")
+        raise UnsupportedFormatError(
+            "Italian tax code must be 16 alphanumeric characters with a valid check character."
+        )
     return normalized
 
 
@@ -187,10 +188,14 @@ def mask_postal_address(value: str | None, *, secret: str, namespace: str, count
     if value is None:
         return None
     normalized = normalize_name(value)
-    return "" if not normalized else f"Indirizzo sintetico {_token(_digest(secret, namespace, normalized, counter), 12)}"
+    return (
+        "" if not normalized else f"Indirizzo sintetico {_token(_digest(secret, namespace, normalized, counter), 12)}"
+    )
 
 
-def mask_contact_value(value: str | None, contact_type: str, *, secret: str, namespace: str, counter: int = 0) -> str | None:
+def mask_contact_value(
+    value: str | None, contact_type: str, *, secret: str, namespace: str, counter: int = 0
+) -> str | None:
     normalized_type = contact_type.strip().lower()
     if normalized_type in {"email", "pec"}:
         return mask_email(value, secret=secret, namespace=f"{namespace}.email", counter=counter)
@@ -227,7 +232,10 @@ def redact_free_text(text: str | None, *, known_names: Iterable[str] = ()) -> st
     redacted = IBAN_IN_TEXT_PATTERN.sub(redact_iban, redacted)
     redacted = TAX_CODE_IN_TEXT_PATTERN.sub(redact_tax_code, redacted)
     redacted = PHONE_IN_TEXT_PATTERN.sub("[REDACTED_PHONE]", redacted)
-    names = sorted({" ".join(name.strip().split()) for name in known_names if name.strip()}, key=lambda item: (-len(item), item.casefold()))
+    names = sorted(
+        {" ".join(name.strip().split()) for name in known_names if name.strip()},
+        key=lambda item: (-len(item), item.casefold()),
+    )
     for name in names:
         redacted = re.sub(rf"\b{re.escape(name)}\b", "[REDACTED_NAME]", redacted, flags=re.IGNORECASE)
     return redacted
@@ -250,8 +258,11 @@ def review_before_masking(value: T, *, column: str) -> T:
 
 
 def resolve_collisions(
-    values: Iterable[str], *, normalizer: Callable[[str], str],
-    candidate_generator: Callable[[str, int], str], max_attempts: int = 100,
+    values: Iterable[str],
+    *,
+    normalizer: Callable[[str], str],
+    candidate_generator: Callable[[str, int], str],
+    max_attempts: int = 100,
 ) -> CollisionResolution:
     if max_attempts < 1:
         raise InvalidConfigurationError("max_attempts must be at least 1.")
@@ -276,15 +287,31 @@ def resolve_collisions(
             raise UnresolvableCollisionError(
                 "A deterministic collision could not be resolved within the configured attempt limit."
             )
-    return CollisionResolution(mapping, CollisionStatistics(
-        len(normalized_values), collisions_detected, values_retried, maximum_attempts_used
-    ))
+    return CollisionResolution(
+        mapping, CollisionStatistics(len(normalized_values), collisions_detected, values_retried, maximum_attempts_used)
+    )
 
 
 __all__ = [
-    "CollisionResolution", "CollisionStatistics", "mask_contact_value", "mask_email",
-    "mask_iban", "mask_person_name", "mask_phone", "mask_postal_address", "mask_tax_code",
-    "normalize_email", "normalize_iban", "normalize_name", "normalize_phone",
-    "normalize_tax_code", "preserve_technical_key", "preserve_value", "redact_free_text",
-    "resolve_collisions", "review_before_masking", "shift_birth_date", "validate_secret",
+    "CollisionResolution",
+    "CollisionStatistics",
+    "mask_contact_value",
+    "mask_email",
+    "mask_iban",
+    "mask_person_name",
+    "mask_phone",
+    "mask_postal_address",
+    "mask_tax_code",
+    "normalize_email",
+    "normalize_iban",
+    "normalize_name",
+    "normalize_phone",
+    "normalize_tax_code",
+    "preserve_technical_key",
+    "preserve_value",
+    "redact_free_text",
+    "resolve_collisions",
+    "review_before_masking",
+    "shift_birth_date",
+    "validate_secret",
 ]

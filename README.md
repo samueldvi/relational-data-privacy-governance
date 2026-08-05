@@ -66,7 +66,7 @@ cp .env.example .env
 # Sostituire in .env i placeholder con valori locali non riutilizzati altrove.
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 docker compose up -d
 python -m src.cli all
 ```
@@ -172,10 +172,23 @@ connessione al database o esecuzione del masking.
 ```bash
 python -m src.cli status
 python -m src.cli all
-pytest -q
+ruff check .
+ruff format --check .
+mypy src
+coverage run -m pytest -q
+coverage report
+coverage xml
+pre-commit run --all-files
 python scripts/check_repository_safety.py
 git diff --check
 ```
+
+La baseline misurata sul branch di hardening è `23,6%` per i soli 14 test
+unitari e `87,7%` per la suite completa di 159 test con PostgreSQL. Il gate
+versionato usa `fail_under = 87`: mantiene un margine minimo per gli
+arrotondamenti, ma fallisce in caso di regressione sostanziale rispetto alla
+baseline verificata. `coverage.xml` è generato per le integrazioni esterne e
+non è versionato.
 
 Le decisioni effettivamente approvate sono versionate in
 [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md); le regole sono descritte in

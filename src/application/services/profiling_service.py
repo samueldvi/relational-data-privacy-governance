@@ -9,4 +9,7 @@ class ProfilingService:
         self._generate_profiling = generate_profiling
 
     def run(self) -> dict[str, Any]:
-        return self._generate_profiling()["metadata"]
+        metadata = self._generate_profiling().get("metadata")
+        if not isinstance(metadata, dict):
+            raise ValueError("Profiling output must contain mapping metadata.")
+        return metadata

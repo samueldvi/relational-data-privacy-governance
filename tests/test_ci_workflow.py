@@ -4,7 +4,6 @@ from pathlib import Path
 
 import yaml
 
-
 WORKFLOW_PATH = Path(".github/workflows/ci.yml")
 
 
@@ -56,8 +55,12 @@ def test_workflow_uses_only_explicit_synthetic_test_credentials() -> None:
     workflow = _workflow()
     environment = workflow["jobs"]["tests"]["env"]
     assert set(environment) == {
-        "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD",
-        "POSTGRES_HOST", "POSTGRES_PORT", "MASKING_SECRET",
+        "POSTGRES_DB",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_HOST",
+        "POSTGRES_PORT",
+        "MASKING_SECRET",
     }
     assert "synthetic" in environment["POSTGRES_PASSWORD"]
     assert "synthetic" in environment["MASKING_SECRET"]

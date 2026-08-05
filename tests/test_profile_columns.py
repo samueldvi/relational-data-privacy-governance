@@ -20,10 +20,7 @@ def profiling(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, dict]:
 
 
 def indexed(results: dict) -> dict[tuple[str, str, str], dict]:
-    return {
-        (row["schema_name"], row["table_name"], row["column_name"]): row
-        for row in results["columns"]
-    }
+    return {(row["schema_name"], row["table_name"], row["column_name"]): row for row in results["columns"]}
 
 
 def test_profiles_all_source_columns_with_required_metrics(profiling: tuple[Path, dict]) -> None:
@@ -37,10 +34,7 @@ def test_profiles_all_source_columns_with_required_metrics(profiling: tuple[Path
 
 def test_columns_patterns_and_matches_are_deterministically_sorted(profiling: tuple[Path, dict]) -> None:
     _, results = profiling
-    order = [
-        (row["schema_name"], row["table_name"], row["ordinal_position"])
-        for row in results["columns"]
-    ]
+    order = [(row["schema_name"], row["table_name"], row["ordinal_position"]) for row in results["columns"]]
     assert order == sorted(order)
     for row in results["columns"]:
         assert row["detected_patterns"] == sorted(
@@ -59,9 +53,7 @@ def test_output_is_byte_identical_between_runs(profiling: tuple[Path, dict]) -> 
 
 def test_samples_are_limited_and_sensitive_structures_are_redacted(profiling: tuple[Path, dict]) -> None:
     output_path, results = profiling
-    serialized_samples = json.dumps(
-        [sample for row in results["columns"] for sample in row["sample_values"]]
-    )
+    serialized_samples = json.dumps([sample for row in results["columns"] for sample in row["sample_values"]])
     assert all(len(row["sample_values"]) <= 20 for row in results["columns"])
     with get_connection() as connection, connection.cursor() as cursor:
         cursor.execute("SELECT email, telefono, cod_fisc FROM crm.clienti")
@@ -116,12 +108,10 @@ def test_misleading_columns_are_detected_and_cross_matched(profiling: tuple[Path
     assert "italian_tax_code" in tax_trap["detected_patterns"]
     assert "email" in email_trap["detected_patterns"]
     tax_match = next(
-        match for match in tax_trap["cross_table_matches"]
-        if match["target_column"] == "crm.clienti.cod_fisc"
+        match for match in tax_trap["cross_table_matches"] if match["target_column"] == "crm.clienti.cod_fisc"
     )
     email_match = next(
-        match for match in email_trap["cross_table_matches"]
-        if match["target_column"] == "crm.clienti.email"
+        match for match in email_trap["cross_table_matches"] if match["target_column"] == "crm.clienti.email"
     )
     assert tax_match["match_percentage"] == 100.0
     assert email_match["match_percentage"] == 100.0

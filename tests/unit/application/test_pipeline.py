@@ -20,25 +20,50 @@ from src.shared.errors import RegistryValidationError
 
 def test_pipeline_has_one_authoritative_order_and_stops_on_first_error() -> None:
     order = []
+
     def record(name, result):
         return lambda *args, **kwargs: order.append(name) or result
+
     context = ApplicationContext(
         generation=GenerationService(record("generate", {"crm.a": 2})),
         inventory=InventoryService(record("inventory", {})),
         profiling=ProfilingService(record("profile", {"metadata": {}})),
-        classification=ClassificationService(record("classify", [{
-            "pii_category": "Non-PII", "masking_rule": "preserve_value", "review_status": "confirmed",
-        }])),
+        classification=ClassificationService(
+            record(
+                "classify",
+                [
+                    {
+                        "pii_category": "Non-PII",
+                        "masking_rule": "preserve_value",
+                        "review_status": "confirmed",
+                    }
+                ],
+            )
+        ),
         masking=MaskingService(
-            record("mask", {"masked_rows_by_table": {"crm.a": 2}, "tables_processed": 1,
-                            "validations": ["rows"], "global_checksum": "a" * 64}),
-            Mock(), Mock(),
+            record(
+                "mask",
+                {
+                    "masked_rows_by_table": {"crm.a": 2},
+                    "tables_processed": 1,
+                    "validations": ["rows"],
+                    "global_checksum": "a" * 64,
+                },
+            ),
+            Mock(),
+            Mock(),
         ),
         validation=ValidationService(
-            record("validate", {
-                "masked_counts": {"crm.a": 2}, "table_checksums": {}, "validations": ["rows"],
-            }),
-            lambda: {"table_checksums": {}, "global_checksum": "a" * 64}, Mock(),
+            record(
+                "validate",
+                {
+                    "masked_counts": {"crm.a": 2},
+                    "table_checksums": {},
+                    "validations": ["rows"],
+                },
+            ),
+            lambda: {"table_checksums": {}, "global_checksum": "a" * 64},
+            Mock(),
         ),
         status=StatusService(lambda: {}),
     )

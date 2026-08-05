@@ -11,7 +11,6 @@ from src.infrastructure.config.loader import load_yaml_path
 from src.infrastructure.serialization.json_manifest_repository import JsonManifestRepository
 from src.masking_manifest import MANIFEST_PATH
 
-
 SOURCE_SCHEMAS = ("billing", "crm", "hr")
 MASKED_SCHEMAS = ("masked_billing", "masked_crm", "masked_hr")
 REGISTRY_PATH = Path("config/pii_registry.yml")
@@ -25,8 +24,11 @@ class ProjectStatusProvider:
     def _git_branch() -> str:
         try:
             result = subprocess.run(
-                ["git", "branch", "--show-current"], capture_output=True, text=True,
-                check=True, timeout=5,
+                ["git", "branch", "--show-current"],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=5,
             )
         except (OSError, subprocess.SubprocessError):
             return "unavailable"
@@ -46,9 +48,7 @@ class ProjectStatusProvider:
         rows = 0
         for schema_name, table_name in tables:
             cursor.execute(
-                sql.SQL("SELECT count(*) FROM {}.{}").format(
-                    sql.Identifier(schema_name), sql.Identifier(table_name)
-                )
+                sql.SQL("SELECT count(*) FROM {}.{}").format(sql.Identifier(schema_name), sql.Identifier(table_name))
             )
             rows += cursor.fetchone()[0]
         return len(tables), rows
@@ -65,18 +65,26 @@ class ProjectStatusProvider:
         with self._connect() as connection, connection.cursor() as cursor:
             source_tables, source_rows = self._counts(cursor, SOURCE_SCHEMAS)
             masked_tables, masked_rows = self._counts(cursor, MASKED_SCHEMAS)
-        ready = all((
-            source_tables == 20, masked_tables == 20,
-            source_rows == masked_rows and source_rows > 0,
-            registry_columns == 109, manifest is not None,
-        ))
+        ready = all(
+            (
+                source_tables == 20,
+                masked_tables == 20,
+                source_rows == masked_rows and source_rows > 0,
+                registry_columns == 109,
+                manifest is not None,
+            )
+        )
         return {
-            "postgresql": "reachable", "source_schemas": len(SOURCE_SCHEMAS),
-            "source_tables": source_tables, "source_rows": source_rows,
-            "masked_tables": masked_tables, "masked_rows": masked_rows,
+            "postgresql": "reachable",
+            "source_schemas": len(SOURCE_SCHEMAS),
+            "source_tables": source_tables,
+            "source_rows": source_rows,
+            "masked_tables": masked_tables,
+            "masked_rows": masked_rows,
             "registry": "available" if registry_columns else "missing",
             "registry_columns": registry_columns,
             "manifest": "available" if manifest else "missing_or_invalid",
             "last_validation": "available" if manifest and manifest.get("validations") else "unavailable",
-            "branch": self._git_branch(), "status": "ready" if ready else "incomplete",
+            "branch": self._git_branch(),
+            "status": "ready" if ready else "incomplete",
         }

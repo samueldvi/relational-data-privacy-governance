@@ -7,7 +7,7 @@ import re
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from psycopg import sql
 
@@ -18,11 +18,9 @@ from src.domain.profiling.normalizers import (
     normalize_name,
     normalize_phone,
     normalize_tax_code,
-    normalize_text,
 )
 from src.infrastructure.database.connection import get_connection
 from src.inventory import SOURCE_SCHEMAS, collect_inventory
-
 
 OUTPUT_PATH = Path("output/profiling_results.json")
 MAX_SAMPLES = 20
@@ -35,27 +33,64 @@ POSTAL_CODE_RE = re.compile(r"^\d{5}$")
 PARTIAL_CARD_RE = re.compile(r"(?:\d[ -]?){4}(?:[*Xx][*Xx -]{2,})(?:\d[ -]?){4}")
 
 PATTERN_ORDER = (
-    "email", "phone", "italian_tax_code", "italian_iban", "birth_date",
-    "postal_address", "postal_code", "partial_card", "bank_reference",
-    "person_name", "surname", "free_text_pii", "email_template",
-    "technical_identifier", "aggregate_value",
+    "email",
+    "phone",
+    "italian_tax_code",
+    "italian_iban",
+    "birth_date",
+    "postal_address",
+    "postal_code",
+    "partial_card",
+    "bank_reference",
+    "person_name",
+    "surname",
+    "free_text_pii",
+    "email_template",
+    "technical_identifier",
+    "aggregate_value",
 )
 
 SAMPLE_ELIGIBLE_PATTERNS = {
-    "email", "phone", "italian_tax_code", "italian_iban", "birth_date",
-    "postal_address", "postal_code", "partial_card", "person_name", "surname",
-    "free_text_pii", "email_template",
+    "email",
+    "phone",
+    "italian_tax_code",
+    "italian_iban",
+    "birth_date",
+    "postal_address",
+    "postal_code",
+    "partial_card",
+    "person_name",
+    "surname",
+    "free_text_pii",
+    "email_template",
 }
 
 PRIVACY_EVIDENCE_PATTERNS = SAMPLE_ELIGIBLE_PATTERNS - {"email_template"}
 
 METADATA_KEYS = {
-    "schema_name", "table_name", "column_name", "ordinal_position", "data_type",
-    "row_count", "non_null_count", "null_count", "null_percentage",
-    "distinct_count", "uniqueness_percentage", "minimum_length", "maximum_length",
-    "average_length", "minimum_value", "maximum_value", "detected_patterns",
-    "pattern_match_counts", "pattern_match_percentages", "sample_values",
-    "sample_redaction_applied", "cross_table_matches", "profiling_notes",
+    "schema_name",
+    "table_name",
+    "column_name",
+    "ordinal_position",
+    "data_type",
+    "row_count",
+    "non_null_count",
+    "null_count",
+    "null_percentage",
+    "distinct_count",
+    "uniqueness_percentage",
+    "minimum_length",
+    "maximum_length",
+    "average_length",
+    "minimum_value",
+    "maximum_value",
+    "detected_patterns",
+    "pattern_match_counts",
+    "pattern_match_percentages",
+    "sample_values",
+    "sample_redaction_applied",
+    "cross_table_matches",
+    "profiling_notes",
 }
 
 
@@ -95,9 +130,7 @@ def _fetch_known_names(cursor: Any) -> tuple[set[str], set[str], set[str]]:
     return first_names, surnames, full_names
 
 
-def _contains_known_name(
-    value: str, first_names: set[str], surnames: set[str], full_names: set[str]
-) -> bool:
+def _contains_known_name(value: str, first_names: set[str], surnames: set[str], full_names: set[str]) -> bool:
     normalized = normalize_name(value)
     if normalized in first_names or normalized in surnames or normalized in full_names:
         return True
@@ -140,8 +173,10 @@ def _pattern_flags(
     if _valid_ibans_in(text):
         flags.add("italian_iban")
     if (
-        data_type == "date" and "nascita" in lowered_column
-        and isinstance(value, date) and date(1900, 1, 1) <= value <= date(2020, 12, 31)
+        data_type == "date"
+        and "nascita" in lowered_column
+        and isinstance(value, date)
+        and date(1900, 1, 1) <= value <= date(2020, 12, 31)
     ):
         flags.add("birth_date")
     if lowered_column in {"via", "citta", "provincia"} and text.strip():
@@ -154,9 +189,7 @@ def _pattern_flags(
         flags.add("bank_reference")
 
     direct_name_columns = {"nome", "nome_ref", "docente", "intestatario"}
-    if lowered_column in direct_name_columns or _contains_known_name(
-        text, first_names, surnames, full_names
-    ):
+    if lowered_column in direct_name_columns or _contains_known_name(text, first_names, surnames, full_names):
         flags.add("person_name")
     if lowered_column == "cognome" or normalize_name(text) in surnames:
         flags.add("surname")
@@ -198,9 +231,7 @@ def _redact_value(
         return f"{value.year:04d}-**-**", True
     if "postal_address" in patterns or "postal_code" in patterns:
         return "[REDACTED_ADDRESS]", True
-    if patterns & {"person_name", "surname"} and column in {
-        "nome", "cognome", "nome_ref", "docente", "intestatario"
-    }:
+    if patterns & {"person_name", "surname"} and column in {"nome", "cognome", "nome_ref", "docente", "intestatario"}:
         return "[REDACTED_NAME]", True
 
     text = EMAIL_RE.sub(_redact_email, text)
@@ -215,9 +246,7 @@ def _redact_value(
                 continue
             text = re.sub(rf"\b{re.escape(name)}\b", "[REDACTED_NAME]", text, flags=re.IGNORECASE)
 
-    if text == original and patterns & {
-        "email", "phone", "italian_tax_code", "italian_iban", "free_text_pii"
-    }:
+    if text == original and patterns & {"email", "phone", "italian_tax_code", "italian_iban", "free_text_pii"}:
         return None, False
     return text, text != original
 
@@ -242,15 +271,18 @@ def _profile_column(
     lengths = [len(str(value)) for value in non_null_values]
     flags_by_value = [
         _pattern_flags(
-            value, metadata["schema_name"], metadata["table_name"], metadata["column_name"],
-            metadata["data_type"], first_names, surnames, full_names,
+            value,
+            metadata["schema_name"],
+            metadata["table_name"],
+            metadata["column_name"],
+            metadata["data_type"],
+            first_names,
+            surnames,
+            full_names,
         )
         for value in non_null_values
     ]
-    pattern_counts = {
-        pattern: sum(pattern in flags for flags in flags_by_value)
-        for pattern in PATTERN_ORDER
-    }
+    pattern_counts = {pattern: sum(pattern in flags for flags in flags_by_value) for pattern in PATTERN_ORDER}
     detected_patterns = [pattern for pattern in PATTERN_ORDER if pattern_counts[pattern] > 0]
     pattern_counts = {pattern: pattern_counts[pattern] for pattern in detected_patterns}
     pattern_percentages = {
@@ -273,8 +305,14 @@ def _profile_column(
         all_known_names = first_names | surnames | full_names
         for value in distinct_values:
             flags = _pattern_flags(
-                value, metadata["schema_name"], metadata["table_name"], metadata["column_name"],
-                metadata["data_type"], first_names, surnames, full_names,
+                value,
+                metadata["schema_name"],
+                metadata["table_name"],
+                metadata["column_name"],
+                metadata["data_type"],
+                first_names,
+                surnames,
+                full_names,
             )
             redacted, applied = _redact_value(value, flags, metadata["column_name"], all_known_names)
             if redacted is not None and redacted not in sample_values:
@@ -285,12 +323,23 @@ def _profile_column(
                 break
 
     supports_range = metadata["data_type"] in {
-        "smallint", "integer", "bigint", "numeric", "real", "double precision",
-        "date", "timestamp without time zone", "timestamp with time zone",
+        "smallint",
+        "integer",
+        "bigint",
+        "numeric",
+        "real",
+        "double precision",
+        "date",
+        "timestamp without time zone",
+        "timestamp with time zone",
     }
     sensitive_range = "birth_date" in detected_patterns
-    minimum_value = _json_scalar(min(non_null_values)) if non_null_values and supports_range and not sensitive_range else None
-    maximum_value = _json_scalar(max(non_null_values)) if non_null_values and supports_range and not sensitive_range else None
+    minimum_value = (
+        _json_scalar(min(non_null_values)) if non_null_values and supports_range and not sensitive_range else None
+    )
+    maximum_value = (
+        _json_scalar(max(non_null_values)) if non_null_values and supports_range and not sensitive_range else None
+    )
 
     profile = {
         "schema_name": metadata["schema_name"],
@@ -325,14 +374,6 @@ def _profile_column(
 def _domain_values(
     values: list[Any], domain: str, first_names: set[str], surnames: set[str], full_names: set[str]
 ) -> set[str]:
-    normalizers: dict[str, Callable[[str], str]] = {
-        "email": normalize_email,
-        "italian_tax_code": normalize_tax_code,
-        "italian_iban": normalize_iban,
-        "phone": normalize_phone,
-        "person_name": normalize_name,
-        "surname": normalize_name,
-    }
     result = set()
     for value in values:
         text = str(value)
@@ -360,8 +401,7 @@ def _add_cross_table_matches(
 ) -> None:
     domains = ("email", "italian_tax_code", "italian_iban", "phone", "person_name", "surname")
     profile_lookup = {
-        (profile["schema_name"], profile["table_name"], profile["column_name"]): profile
-        for profile in profiles
+        (profile["schema_name"], profile["table_name"], profile["column_name"]): profile for profile in profiles
     }
     for source_key, source_profile in sorted(profile_lookup.items()):
         matches = []
@@ -384,21 +424,26 @@ def _add_cross_table_matches(
                     continue
                 percentage = len(common) * 100 / len(source_values)
                 confidence = "high" if percentage >= 80 else "medium" if percentage >= 25 else "low"
-                matches.append({
-                    "target_column": ".".join(target_key),
-                    "pattern": domain,
-                    "source_non_null_count": len(internal_data[source_key]["values"]),
-                    "source_distinct_count": len(source_values),
-                    "matched_distinct_count": len(common),
-                    "match_percentage": round(percentage, 2),
-                    "normalization": {
-                        "email": "trim_lowercase", "italian_tax_code": "trim_uppercase",
-                        "italian_iban": "remove_spaces_uppercase", "phone": "digits_with_optional_plus",
-                        "person_name": "trim_lowercase_collapse_spaces", "surname": "trim_lowercase_collapse_spaces",
-                    }[domain],
-                    "evidence": f"{len(common)}/{len(source_values)} valori distinti normalizzati in comune",
-                    "technical_confidence": confidence,
-                })
+                matches.append(
+                    {
+                        "target_column": ".".join(target_key),
+                        "pattern": domain,
+                        "source_non_null_count": len(internal_data[source_key]["values"]),
+                        "source_distinct_count": len(source_values),
+                        "matched_distinct_count": len(common),
+                        "match_percentage": round(percentage, 2),
+                        "normalization": {
+                            "email": "trim_lowercase",
+                            "italian_tax_code": "trim_uppercase",
+                            "italian_iban": "remove_spaces_uppercase",
+                            "phone": "digits_with_optional_plus",
+                            "person_name": "trim_lowercase_collapse_spaces",
+                            "surname": "trim_lowercase_collapse_spaces",
+                        }[domain],
+                        "evidence": f"{len(common)}/{len(source_values)} valori distinti normalizzati in comune",
+                        "technical_confidence": confidence,
+                    }
+                )
         source_profile["cross_table_matches"] = sorted(
             matches, key=lambda item: (item["pattern"], item["target_column"])
         )
@@ -415,24 +460,19 @@ def build_profiling_results() -> dict[str, Any]:
             for metadata in inventory:
                 key = (metadata["schema_name"], metadata["table_name"], metadata["column_name"])
                 values = _fetch_values(cursor, *key)
-                profile, internal = _profile_column(
-                    metadata, values, first_names, surnames, full_names
-                )
+                profile, internal = _profile_column(metadata, values, first_names, surnames, full_names)
                 profiles.append(profile)
                 internal_data[key] = internal
-            _add_cross_table_matches(
-                profiles, internal_data, first_names, surnames, full_names
-            )
+            _add_cross_table_matches(profiles, internal_data, first_names, surnames, full_names)
 
     pattern_evidence_columns = sum(bool(profile["detected_patterns"]) for profile in profiles)
     suspicious_columns = sum(
-        bool(set(profile["detected_patterns"]) & PRIVACY_EVIDENCE_PATTERNS)
-        for profile in profiles
+        bool(set(profile["detected_patterns"]) & PRIVACY_EVIDENCE_PATTERNS) for profile in profiles
     )
     redacted_samples = sum(profile["redacted_sample_count"] for profile in profiles)
-    detected_patterns = sorted({
-        pattern for profile in profiles for pattern in profile["detected_patterns"]
-    }, key=PATTERN_ORDER.index)
+    detected_patterns = sorted(
+        {pattern for profile in profiles for pattern in profile["detected_patterns"]}, key=PATTERN_ORDER.index
+    )
     return {
         "metadata": {
             "source_schemas": list(SOURCE_SCHEMAS),
@@ -470,8 +510,7 @@ def main() -> None:
         f"of which {metadata['suspicious_column_count']} contain privacy-compatible patterns."
     )
     print(
-        f"Patterns: {', '.join(metadata['detected_patterns'])}; "
-        f"redacted samples: {metadata['redacted_sample_count']}."
+        f"Patterns: {', '.join(metadata['detected_patterns'])}; redacted samples: {metadata['redacted_sample_count']}."
     )
     print(f"Written: {OUTPUT_PATH}")
 

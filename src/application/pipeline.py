@@ -5,7 +5,6 @@ from collections.abc import Callable
 from src.application.context import ApplicationContext
 from src.application.dto import PhaseResult, PipelineResult
 
-
 PIPELINE_PHASES = ("generate", "inventory", "profile", "classify", "mask", "validate")
 
 
@@ -34,8 +33,10 @@ class EndToEndPipeline:
             results[name] = metrics
         manifest = results["mask"]
         return PipelineResult(
-            phases=tuple(phases), rows=sum(manifest["masked_rows_by_table"].values()),
+            phases=tuple(phases),
+            rows=sum(manifest["masked_rows_by_table"].values()),
             classified_columns=results["classify"]["columns"],
-            masked_tables=manifest["tables_processed"], validations=len(manifest["validations"]),
+            masked_tables=manifest["tables_processed"],
+            validations=len(manifest["validations"]),
             checksum=manifest["global_checksum"],
         )

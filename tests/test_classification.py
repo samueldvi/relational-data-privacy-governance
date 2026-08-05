@@ -27,8 +27,7 @@ from src.generate_docs import render_classification_markdown
 def registry() -> tuple[list[dict], dict[str, dict]]:
     records = generate_classification()
     return records, {
-        f"{record['schema_name']}.{record['table_name']}.{record['column_name']}": record
-        for record in records
+        f"{record['schema_name']}.{record['table_name']}.{record['column_name']}": record for record in records
     }
 
 
@@ -57,8 +56,13 @@ def test_data_domains_are_complete_and_referenced(registry: tuple[list[dict], di
     records, _ = registry
     domains = yaml.safe_load(DOMAINS_PATH.read_text(encoding="utf-8"))["domains"]
     required_domain_fields = {
-        "description", "default_pii_category", "normalization", "risk",
-        "planned_transformation", "limitations", "synthetic_examples",
+        "description",
+        "default_pii_category",
+        "normalization",
+        "risk",
+        "planned_transformation",
+        "limitations",
+        "synthetic_examples",
     }
     assert len(domains) >= 18
     assert all(required_domain_fields <= set(domain) for domain in domains.values())
@@ -78,22 +82,33 @@ def test_data_domains_are_complete_and_referenced(registry: tuple[list[dict], di
     ],
 )
 def test_mandatory_cases(
-    registry: tuple[list[dict], dict[str, dict]], key: str, category: str,
-    domain: str, subject: str, status: str,
+    registry: tuple[list[dict], dict[str, dict]],
+    key: str,
+    category: str,
+    domain: str,
+    subject: str,
+    status: str,
 ) -> None:
     _, indexed = registry
     record = indexed[key]
     assert (record["pii_category"], record["data_domain"], record["data_subject"], record["review_status"]) == (
-        category, domain, subject, status
+        category,
+        domain,
+        subject,
+        status,
     )
 
 
 def test_names_tax_codes_and_ibans_are_direct_pii(registry: tuple[list[dict], dict[str, dict]]) -> None:
     records, indexed = registry
     name_keys = {
-        "crm.clienti.nome", "crm.clienti.cognome", "hr.dipendenti.nome",
-        "hr.dipendenti.cognome", "crm.referenti_commerciali.nome_ref",
-        "billing.coordinate_bancarie.intestatario", "hr.formazione.docente",
+        "crm.clienti.nome",
+        "crm.clienti.cognome",
+        "hr.dipendenti.nome",
+        "hr.dipendenti.cognome",
+        "crm.referenti_commerciali.nome_ref",
+        "billing.coordinate_bancarie.intestatario",
+        "hr.formazione.docente",
     }
     for key in name_keys:
         assert indexed[key]["pii_category"] == "PII-diretta"
@@ -107,7 +122,9 @@ def test_masking_rules_and_consistency_groups(registry: tuple[list[dict], dict[s
     records, indexed = registry
     assert all(record["masking_rule"] for record in records if record["pii_category"].startswith("PII-"))
     assert all(record["masking_rule"] == "preserve_value" for record in records if record["pii_category"] == "Non-PII")
-    assert all(record["masking_rule"] == "review_before_masking" for record in records if record["pii_category"] == "Dubbio")
+    assert all(
+        record["masking_rule"] == "review_before_masking" for record in records if record["pii_category"] == "Dubbio"
+    )
     expected_groups = {
         "crm.clienti.cod_fisc": "customer_tax_code",
         "billing.sconti.cod_rif": "customer_tax_code",
@@ -176,8 +193,11 @@ def test_registry_rejects_missing_column(registry: tuple[list[dict], dict[str, d
 
 def test_no_generic_markers_in_governance_outputs(registry: tuple[list[dict], dict[str, dict]]) -> None:
     paths = (
-        DOMAINS_PATH, Path("config/classification_overrides.yml"), REGISTRY_PATH,
-        Path("output/pii_catalog.csv"), Path("docs/CLASSIFICAZIONE_PII.md"),
+        DOMAINS_PATH,
+        Path("config/classification_overrides.yml"),
+        REGISTRY_PATH,
+        Path("output/pii_catalog.csv"),
+        Path("docs/CLASSIFICAZIONE_PII.md"),
     )
     text = "\n".join(path.read_text(encoding="utf-8").lower() for path in paths)
     assert re.search(r"\b(?:todo|tbd|placeholder)\b|unknown_reason|to_be_defined", text) is None

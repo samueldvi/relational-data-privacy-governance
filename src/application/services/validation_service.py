@@ -10,7 +10,8 @@ from src.shared.errors import ValidationError
 
 class ValidationService:
     def __init__(
-        self, validate_masked: Callable[[], dict[str, Any]],
+        self,
+        validate_masked: Callable[[], dict[str, Any]],
         load_manifest: Callable[[], dict[str, Any]],
         apply_to_path: Callable[[Path], dict[str, Any]],
     ) -> None:
@@ -35,5 +36,6 @@ class ValidationService:
             "tables": len(result["masked_counts"]),
             "rows": sum(result["masked_counts"].values()),
             "validations": len(result["validations"]),
-            "checksum": manifest["global_checksum"], "idempotent": idempotent,
+            "checksum": manifest["global_checksum"],
+            "idempotent": idempotent,
         }

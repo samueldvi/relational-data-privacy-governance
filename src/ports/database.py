@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, ContextManager, Protocol, Sequence
+from collections.abc import Sequence
+from contextlib import AbstractContextManager
+from typing import Any, Protocol
 
 
 class DatabaseSession(Protocol):
-    def transaction(self) -> ContextManager[Any]: ...
+    def transaction(self) -> AbstractContextManager[Any]: ...
 
 
 class SourceDataRepository(Protocol):

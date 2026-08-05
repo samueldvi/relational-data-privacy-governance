@@ -14,24 +14,31 @@ from src.domain.validation.manifest import (
     table_checksum,
 )
 
-
 MANIFEST_PATH = Path("output/masking_manifest.json")
+
+__all__ = [
+    "canonical_table_payload",
+    "canonical_value",
+    "finalize_manifest",
+    "table_checksum",
+]
 
 
 def current_git_commit() -> str | None:
     try:
         result = subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True,
-            check=True, timeout=5,
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=5,
         )
     except (OSError, subprocess.SubprocessError):
         return None
     return result.stdout.strip() or None
 
 
-def write_manifest(
-    manifest: dict[str, Any], path: Path = MANIFEST_PATH
-) -> None:
+def write_manifest(manifest: dict[str, Any], path: Path = MANIFEST_PATH) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",

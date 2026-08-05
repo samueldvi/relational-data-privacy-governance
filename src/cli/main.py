@@ -12,11 +12,14 @@ from src.cli.commands import classify, generate, inventory, mask, profile, statu
 from src.generate_data import DEFAULT_SEED
 from src.shared.errors import PrivacyGovernanceError
 
-
 COMMANDS = {
-    "generate": generate.execute, "inventory": inventory.execute,
-    "profile": profile.execute, "classify": classify.execute,
-    "mask": mask.execute, "validate": validate.execute, "status": status.execute,
+    "generate": generate.execute,
+    "inventory": inventory.execute,
+    "profile": profile.execute,
+    "classify": classify.execute,
+    "mask": mask.execute,
+    "validate": validate.execute,
+    "status": status.execute,
 }
 
 

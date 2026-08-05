@@ -7,7 +7,6 @@ import yaml
 
 from src.shared.errors import ConfigurationError
 
-
 CONFIG_DIRECTORY = Path("config")
 
 
@@ -22,9 +21,7 @@ def load_yaml_path(path: Path) -> dict[str, Any]:
     return document
 
 
-def write_yaml_path(
-    path: Path, document: dict[str, Any], *, sort_keys: bool = False, width: int = 120
-) -> None:
+def write_yaml_path(path: Path, document: dict[str, Any], *, sort_keys: bool = False, width: int = 120) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         path.write_text(

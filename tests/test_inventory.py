@@ -12,13 +12,14 @@ from src.inventory import (
     CONFIRMED_LOGICAL_RELATIONSHIPS,
     INVENTORY_FIELDS,
     RELATIONSHIP_FIELDS,
-    collect_inventory,
     generate_inventory,
 )
 
 
 @pytest.fixture(scope="module")
-def generated_inventory(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, list[dict[str, str]], list[dict[str, str]]]:
+def generated_inventory(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> tuple[Path, list[dict[str, str]], list[dict[str, str]]]:
     output_dir = tmp_path_factory.mktemp("inventory")
     generate_inventory(output_dir)
     with (output_dir / "inventory.csv").open(encoding="utf-8", newline="") as file:
@@ -28,14 +29,18 @@ def generated_inventory(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path,
     return output_dir, inventory, relationships
 
 
-def test_exact_source_schemas_and_tables(generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]]) -> None:
+def test_exact_source_schemas_and_tables(
+    generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]],
+) -> None:
     _, inventory, _ = generated_inventory
     assert {row["schema_name"] for row in inventory} == {"billing", "crm", "hr"}
     assert len({(row["schema_name"], row["table_name"]) for row in inventory}) == 20
     assert not any(row["schema_name"].startswith("masked_") for row in inventory)
 
 
-def test_one_inventory_row_per_database_column(generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]]) -> None:
+def test_one_inventory_row_per_database_column(
+    generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]],
+) -> None:
     _, inventory, _ = generated_inventory
     keys = [(row["schema_name"], row["table_name"], row["column_name"]) for row in inventory]
     assert len(keys) == len(set(keys))
@@ -44,14 +49,18 @@ def test_one_inventory_row_per_database_column(generated_inventory: tuple[Path, 
         assert len(inventory) == cursor.fetchone()[0]
 
 
-def test_inventory_is_deterministically_sorted(generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]]) -> None:
+def test_inventory_is_deterministically_sorted(
+    generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]],
+) -> None:
     _, inventory, _ = generated_inventory
     order = [(row["schema_name"], row["table_name"], int(row["ordinal_position"])) for row in inventory]
     assert order == sorted(order)
     assert tuple(inventory[0]) == INVENTORY_FIELDS
 
 
-def test_catalog_constraints_are_represented(generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]]) -> None:
+def test_catalog_constraints_are_represented(
+    generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]],
+) -> None:
     _, inventory, relationships = generated_inventory
     with get_connection() as connection, connection.cursor() as cursor:
         cursor.execute("""
@@ -69,7 +78,7 @@ def test_catalog_constraints_are_represented(generated_inventory: tuple[Path, li
 
 
 def test_composite_unique_constraint_is_stable_without_false_parent_uniqueness(
-    generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]]
+    generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]],
 ) -> None:
     _, inventory, relationships = generated_inventory
     payroll_members = {
@@ -81,19 +90,23 @@ def test_composite_unique_constraint_is_stable_without_false_parent_uniqueness(
     }
     assert payroll_members == {"dipendente_id", "mese", "anno"}
     assert not any(
-        row["target_schema"] == "hr"
-        and row["target_table"] == "buste_paga"
-        and row["target_column"] in payroll_members
+        row["target_schema"] == "hr" and row["target_table"] == "buste_paga" and row["target_column"] in payroll_members
         for row in relationships
     )
 
 
-def test_approved_logical_relationships_are_confirmed(generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]]) -> None:
+def test_approved_logical_relationships_are_confirmed(
+    generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]],
+) -> None:
     _, _, relationships = generated_inventory
     indexed = {
         (
-            row["source_schema"], row["source_table"], row["source_column"],
-            row["target_schema"], row["target_table"], row["target_column"],
+            row["source_schema"],
+            row["source_table"],
+            row["source_column"],
+            row["target_schema"],
+            row["target_table"],
+            row["target_column"],
         ): row
         for row in relationships
     }
@@ -121,7 +134,9 @@ def test_inventory_does_not_create_foreign_keys(tmp_path: Path) -> None:
     assert before == after
 
 
-def test_csv_contains_no_source_pii(generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]]) -> None:
+def test_csv_contains_no_source_pii(
+    generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]],
+) -> None:
     output_dir, _, _ = generated_inventory
     output_text = (output_dir / "inventory.csv").read_text(encoding="utf-8")
     output_text += (output_dir / "logical_relationships.csv").read_text(encoding="utf-8")
@@ -131,23 +146,27 @@ def test_csv_contains_no_source_pii(generated_inventory: tuple[Path, list[dict[s
     assert not any(value in output_text for value in pii_values)
 
 
-def test_outputs_are_byte_identical(generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]]) -> None:
+def test_outputs_are_byte_identical(
+    generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]],
+) -> None:
     output_dir, _, _ = generated_inventory
-    first = {
-        name: (output_dir / name).read_bytes()
-        for name in ("inventory.csv", "logical_relationships.csv")
-    }
+    first = {name: (output_dir / name).read_bytes() for name in ("inventory.csv", "logical_relationships.csv")}
     generate_inventory(output_dir)
     second = {name: (output_dir / name).read_bytes() for name in first}
     assert first == second
 
 
-def test_relationship_schema_is_stable(generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]]) -> None:
+def test_relationship_schema_is_stable(
+    generated_inventory: tuple[Path, list[dict[str, str]], list[dict[str, str]]],
+) -> None:
     _, _, relationships = generated_inventory
     assert relationships
     assert tuple(relationships[0]) == RELATIONSHIP_FIELDS
     assert {row["relationship_status"] for row in relationships} <= {
-        "declared", "logical_confirmed", "logical_suspected", "not_confirmed"
+        "declared",
+        "logical_confirmed",
+        "logical_suspected",
+        "not_confirmed",
     }
 
 

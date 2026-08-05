@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 from src.shared.errors import ConfigurationError
 
-
 # Compatibility bootstrap at the infrastructure boundary; never imported by domain code.
 load_dotenv()
 
@@ -21,7 +20,7 @@ class DatabaseSettings:
     port: int
 
     @classmethod
-    def from_environment(cls) -> "DatabaseSettings":
+    def from_environment(cls) -> DatabaseSettings:
         required = ("POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_PORT")
         missing = [name for name in required if not os.environ.get(name)]
         if missing:
@@ -31,7 +30,9 @@ class DatabaseSettings:
         except ValueError as error:
             raise ConfigurationError("POSTGRES_PORT must be an integer.") from error
         return cls(
-            database=os.environ["POSTGRES_DB"], user=os.environ["POSTGRES_USER"],
-            password=os.environ["POSTGRES_PASSWORD"], host=os.environ["POSTGRES_HOST"],
+            database=os.environ["POSTGRES_DB"],
+            user=os.environ["POSTGRES_USER"],
+            password=os.environ["POSTGRES_PASSWORD"],
+            host=os.environ["POSTGRES_HOST"],
             port=port,
         )

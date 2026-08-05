@@ -44,13 +44,9 @@ def test_dry_run_is_complete_and_does_not_write() -> None:
     assert before == after
 
 
-def test_ambiguous_column_blocks_without_confirmed_override(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_ambiguous_column_blocks_without_confirmed_override(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config = yaml.safe_load(pipeline.EXECUTION_CONFIG_PATH.read_text(encoding="utf-8"))
-    config["ambiguous_columns"]["billing.pagamenti.riferimento_bancario"] = {
-        "strategy": "block"
-    }
+    config["ambiguous_columns"]["billing.pagamenti.riferimento_bancario"] = {"strategy": "block"}
     blocked_config = tmp_path / "masking_execution.yml"
     blocked_config.write_text(yaml.safe_dump(config), encoding="utf-8")
     monkeypatch.setattr(pipeline, "EXECUTION_CONFIG_PATH", blocked_config)
@@ -135,6 +131,9 @@ def test_commands_are_executable_from_repository_root() -> None:
     ):
         result = subprocess.run(
             [sys.executable, "-m", "src.apply_masking", option],
-            capture_output=True, text=True, check=True, timeout=30,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=30,
         )
         assert expected in result.stdout

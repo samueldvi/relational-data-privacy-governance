@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 README = Path("README.md").read_text(encoding="utf-8")
 INFORMATICA = Path("docs/TRASFERIMENTO_INFORMATICA.md").read_text(encoding="utf-8")
 WEB_DEMO = Path("docs/WEB_DEMO_FEASIBILITY.md").read_text(encoding="utf-8")
@@ -16,9 +15,15 @@ def test_readme_has_real_ci_badge_and_tldr_near_the_title() -> None:
 
 def test_readme_documents_architecture_quick_start_cli_security_and_limits() -> None:
     for required in (
-        "## Architettura", "## Quick start", "## CLI", "## Sicurezza e governance",
-        "## Limiti", "python -m src.cli all", "python -m src.cli status",
-        "scripts/check_repository_safety.py", "scripts/validate_clean_environment.sh",
+        "## Architettura",
+        "## Quick start",
+        "## CLI",
+        "## Sicurezza e governance",
+        "## Limiti",
+        "python -m src.cli all",
+        "python -m src.cli status",
+        "scripts/check_repository_safety.py",
+        "scripts/validate_clean_environment.sh",
     ):
         assert required in README
     assert "Synthetic Data" in README and "Privacy Metadata Registry" in README
@@ -36,9 +41,12 @@ def test_readme_is_explicit_about_synthetic_data_and_informatica_scope() -> None
 
 def test_informatica_document_distinguishes_three_levels_and_has_mapping() -> None:
     for required in (
-        "## Implementato localmente", "## Trasferibile concettualmente",
-        "## Da verificare sulla piattaforma", "## Tabella di mapping",
-        "## Piano di adozione", "## Domande da porre al cliente",
+        "## Implementato localmente",
+        "## Trasferibile concettualmente",
+        "## Da verificare sulla piattaforma",
+        "## Tabella di mapping",
+        "## Piano di adozione",
+        "## Domande da porre al cliente",
     ):
         assert required in INFORMATICA
     assert "nomi esatti" in INFORMATICA and "limiti di licenza" in INFORMATICA

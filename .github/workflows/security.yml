@@ -26,7 +26,7 @@ jobs:
       - name: Generate CycloneDX SBOM
         run: cyclonedx-py requirements requirements-runtime.txt --output-file sbom.json
       - run: python scripts/check_repository_safety.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dependency-security-reports
           path: |
@@ -52,7 +52,7 @@ jobs:
           upload-database: false
       - name: Retain CodeQL results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codeql-results
           path: codeql-results/*.sarif
@@ -76,7 +76,7 @@ jobs:
           exit-code: "1"
       - name: Retain Trivy results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: trivy-results
           path: trivy-results.sarif

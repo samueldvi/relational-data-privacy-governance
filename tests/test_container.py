@@ -59,6 +59,7 @@ def test_security_ci_retains_results_without_requiring_code_scanning() -> None:
     codeql_steps = workflow["jobs"]["codeql"]["steps"]
     container_steps = workflow["jobs"]["container"]["steps"]
 
+    assert workflow["jobs"]["codeql"]["permissions"] == {"actions": "read", "contents": "read"}
     assert any(step.get("uses") == "github/codeql-action/init@v4" for step in codeql_steps)
     analyze = next(step for step in codeql_steps if step.get("uses") == "github/codeql-action/analyze@v4")
     assert analyze["with"]["upload"] == "never"

@@ -1,0 +1,84 @@
+name: Security
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install pip-audit==2.9.0 cyclonedx-bom==7.1.0
+      - name: Audit dependencies and retain all findings
+        continue-on-error: true
+        run: pip-audit --requirement requirements-runtime.txt --format json --output pip-audit.json
+      - name: Generate CycloneDX SBOM
+        run: cyclonedx-py requirements requirements-runtime.txt --output-file sbom.json
+      - run: python scripts/check_repository_safety.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dependency-security-reports
+          path: |
+            pip-audit.json
+            sbom.json
+          retention-days: 14
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: python
+      - name: Analyze source code
+        uses: github/codeql-action/analyze@v4
+        with:
+          output: codeql-results
+          upload: never
+          upload-database: false
+      - name: Retain CodeQL results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-results
+          path: codeql-results/*.sarif
+          if-no-files-found: warn
+          retention-days: 14
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --tag privacy-pipeline:security .
+      - name: Scan fixable critical and high vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: privacy-pipeline:security
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          limit-severities-for-sarif: true
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Retain Trivy results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results
+          path: trivy-results.sarif
+          if-no-files-found: warn
+          retention-days: 14

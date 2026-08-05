@@ -45,11 +45,40 @@ from src.shared.errors import (
     WeakSecretError,
 )
 
-
 MASKING_RULES_PATH = Path("config/masking_rules.yml")
 CONSISTENCY_GROUPS_PATH = Path("config/consistency_groups.yml")
 REGISTRY_PATH = Path("config/pii_registry.yml")
 DOCUMENTATION_PATH = Path("docs/REGOLE_MASCHERAMENTO.md")
+
+__all__ = [
+    "CollisionResolution",
+    "CollisionStatistics",
+    "InvalidConfigurationError",
+    "MaskingError",
+    "MissingSecretError",
+    "ReviewRequiredError",
+    "UnresolvableCollisionError",
+    "UnsupportedFormatError",
+    "WeakSecretError",
+    "mask_contact_value",
+    "mask_email",
+    "mask_iban",
+    "mask_person_name",
+    "mask_phone",
+    "mask_postal_address",
+    "mask_tax_code",
+    "normalize_email",
+    "normalize_iban",
+    "normalize_name",
+    "normalize_phone",
+    "normalize_tax_code",
+    "preserve_technical_key",
+    "preserve_value",
+    "redact_free_text",
+    "resolve_collisions",
+    "review_before_masking",
+    "shift_birth_date",
+]
 
 
 def get_masking_secret() -> str:
@@ -74,8 +103,7 @@ def validate_masking_configuration(
     rules = _load_yaml(rules_path)["rules"]
     groups = _load_yaml(groups_path)["groups"]
     registry_by_column = {
-        f"{record['schema_name']}.{record['table_name']}.{record['column_name']}": record
-        for record in registry
+        f"{record['schema_name']}.{record['table_name']}.{record['column_name']}": record for record in registry
     }
     unknown_rules = sorted({record["masking_rule"] for record in registry} - set(rules))
     unknown_groups = sorted(
@@ -97,9 +125,7 @@ def validate_masking_configuration(
                     f"Consistency group {group_name} references an unknown registry column."
                 )
             if column in configured_membership:
-                raise InvalidConfigurationError(
-                    "A registry column cannot belong to multiple consistency groups."
-                )
+                raise InvalidConfigurationError("A registry column cannot belong to multiple consistency groups.")
             configured_membership[column] = group_name
             record = registry_by_column[column]
             if record["data_domain"] != group["data_domain"] or record["data_subject"] != group["data_subject"]:
@@ -112,9 +138,7 @@ def validate_masking_configuration(
         if record["consistency_group"]
     }
     if configured_membership != expected_membership:
-        raise InvalidConfigurationError(
-            "Consistency group membership does not match the Privacy Metadata Registry."
-        )
+        raise InvalidConfigurationError("Consistency group membership does not match the Privacy Metadata Registry.")
 
     for record in registry:
         if record["pii_category"] == "Non-PII" and record["masking_rule"] != "preserve_value":
@@ -158,11 +182,16 @@ def render_masking_documentation(
     rules = _load_yaml(rules_path)["rules"]
     groups = _load_yaml(groups_path)["groups"]
     lines = [
-        "# Regole di masking", "",
-        "> Documento generato deterministicamente dalle configurazioni YAML. Nessun secret è incluso.", "",
-        "## Principi", "",
-        "Le pseudonimizzazioni usano `HMAC-SHA-256(secret, namespace + ':' + valore_normalizzato)` e namespace distinti. I mapping di collisione esistono soltanto in memoria.", "",
-        "## Consistency group", "",
+        "# Regole di masking",
+        "",
+        "> Documento generato deterministicamente dalle configurazioni YAML. Nessun secret è incluso.",
+        "",
+        "## Principi",
+        "",
+        "Le pseudonimizzazioni usano `HMAC-SHA-256(secret, namespace + ':' + valore_normalizzato)` e namespace distinti. I mapping di collisione esistono soltanto in memoria.",
+        "",
+        "## Consistency group",
+        "",
         "| Gruppo | Dominio | Soggetto | Namespace | Normalizzazione | Formato | Colonne |",
         "| --- | --- | --- | --- | --- | --- | --- |",
     ]
@@ -173,22 +202,30 @@ def render_masking_documentation(
         )
     lines.extend(["", "## Regole", ""])
     for name, rule in rules.items():
-        lines.extend([
-            f"### `{name}`", "",
-            f"- **Scopo e input:** domini `{', '.join(rule['domains'])}`; trasformazione `{rule['transformation_type']}`.",
-            f"- **Normalizzazione:** `{rule['normalization']}`.",
-            f"- **Algoritmo:** `{rule['algorithm']}`.",
-            f"- **Output:** `{rule['output_format']}`; esempio sintetico: `{SYNTHETIC_RULE_EXAMPLES[name]}`.",
-            f"- **Determinismo e namespace:** deterministico={str(rule['deterministic']).lower()}; il namespace è fornito dal consistency group o dal contesto del soggetto.",
-            f"- **NULL e stringhe vuote:** `{rule['null_handling']}` / `{rule['empty_string_handling']}`.",
-            f"- **Collisioni:** `{rule['collision_handling']}`.",
-            f"- **Impatto analitico:** {rule['analytical_impact']}",
-            f"- **Limiti:** {rule['limitations']}", "",
-        ])
-    lines.extend([
-        "## Trasferimento concettuale verso Informatica", "",
-        "Le configurazioni locali rappresentano concetti di dominio, regola e coerenza cross-tabella trasferibili a una piattaforma enterprise. Nomi, disponibilità e comportamento delle funzioni specifiche di Informatica Data Privacy Management dovranno essere verificati quando la licenza sarà disponibile; questo documento non attribuisce funzionalità non osservate.", "",
-    ])
+        lines.extend(
+            [
+                f"### `{name}`",
+                "",
+                f"- **Scopo e input:** domini `{', '.join(rule['domains'])}`; trasformazione `{rule['transformation_type']}`.",
+                f"- **Normalizzazione:** `{rule['normalization']}`.",
+                f"- **Algoritmo:** `{rule['algorithm']}`.",
+                f"- **Output:** `{rule['output_format']}`; esempio sintetico: `{SYNTHETIC_RULE_EXAMPLES[name]}`.",
+                f"- **Determinismo e namespace:** deterministico={str(rule['deterministic']).lower()}; il namespace è fornito dal consistency group o dal contesto del soggetto.",
+                f"- **NULL e stringhe vuote:** `{rule['null_handling']}` / `{rule['empty_string_handling']}`.",
+                f"- **Collisioni:** `{rule['collision_handling']}`.",
+                f"- **Impatto analitico:** {rule['analytical_impact']}",
+                f"- **Limiti:** {rule['limitations']}",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## Trasferimento concettuale verso Informatica",
+            "",
+            "Le configurazioni locali rappresentano concetti di dominio, regola e coerenza cross-tabella trasferibili a una piattaforma enterprise. Nomi, disponibilità e comportamento delle funzioni specifiche di Informatica Data Privacy Management dovranno essere verificati quando la licenza sarà disponibile; questo documento non attribuisce funzionalità non osservate.",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 

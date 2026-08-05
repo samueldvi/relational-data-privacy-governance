@@ -26,7 +26,14 @@ class PostgresMetadataRepository:
                 (list(self._schemas),),
             )
             return tuple(
-                ColumnMetadata(*row[:5], nullable=row[5] == "YES")
+                ColumnMetadata(
+                    schema_name=row[0],
+                    table_name=row[1],
+                    column_name=row[2],
+                    ordinal_position=row[3],
+                    data_type=row[4],
+                    nullable=row[5] == "YES",
+                )
                 for row in cursor.fetchall()
             )
 
@@ -61,7 +68,10 @@ class PostgresSourceRepository:
                         sql.Identifier(schema_name), sql.Identifier(table_name)
                     )
                 )
-                counts[qualified] = cursor.fetchone()[0]
+                result = cursor.fetchone()
+                if result is None:
+                    raise RuntimeError(f"PostgreSQL returned no count for {qualified}.")
+                counts[qualified] = result[0]
             return counts
 
     def ordered_rows(self, table_name: str) -> Sequence[tuple[Any, ...]]:

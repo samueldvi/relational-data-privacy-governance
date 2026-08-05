@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
-
 CF_ODD_VALUES = {
-    **dict(zip("0123456789", (1, 0, 5, 7, 9, 13, 15, 17, 19, 21))),
-    **dict(zip("ABCDEFGHIJKLMNOPQRSTUVWXYZ", (1, 0, 5, 7, 9, 13, 15, 17, 19, 21, 2, 4, 18, 20, 11, 3, 6, 8, 12, 14, 16, 10, 22, 25, 24, 23))),
+    **dict(zip("0123456789", (1, 0, 5, 7, 9, 13, 15, 17, 19, 21), strict=True)),
+    **dict(
+        zip(
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            (1, 0, 5, 7, 9, 13, 15, 17, 19, 21, 2, 4, 18, 20, 11, 3, 6, 8, 12, 14, 16, 10, 22, 25, 24, 23),
+            strict=True,
+        )
+    ),
 }
 CF_MONTH_CODES = "ABCDEHLMPRST"
 
@@ -41,8 +46,5 @@ def iban_mod97(value: str) -> int:
 
 def is_valid_italian_iban(value: str) -> bool:
     return (
-        len(value) == 27
-        and value.startswith("IT")
-        and value[2:].isalnum()
-        and iban_mod97(value[4:] + value[:4]) == 1
+        len(value) == 27 and value.startswith("IT") and value[2:].isalnum() and iban_mod97(value[4:] + value[:4]) == 1
     )

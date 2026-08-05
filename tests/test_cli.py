@@ -12,15 +12,19 @@ import pytest
 import src.cli as cli
 from src.application.dto import PhaseResult, PipelineResult
 
-
 cli_main = importlib.import_module("src.cli.main")
 
 
 def _context(**services: object) -> SimpleNamespace:
     defaults = {
-        "generation": Mock(), "inventory": Mock(), "profiling": Mock(),
-        "classification": Mock(), "masking": Mock(), "validation": Mock(),
+        "generation": Mock(),
+        "inventory": Mock(),
+        "profiling": Mock(),
+        "classification": Mock(),
+        "masking": Mock(),
+        "validation": Mock(),
         "status": Mock(),
+        "drift": Mock(),
     }
     defaults.update(services)
     return SimpleNamespace(**defaults)
@@ -28,7 +32,14 @@ def _context(**services: object) -> SimpleNamespace:
 
 @pytest.mark.parametrize(
     "arguments",
-    [["--help"], ["generate", "--help"], ["mask", "--help"], ["validate", "--help"], ["all", "--help"]],
+    [
+        ["--help"],
+        ["generate", "--help"],
+        ["mask", "--help"],
+        ["validate", "--help"],
+        ["drift", "--help"],
+        ["all", "--help"],
+    ],
 )
 def test_help_is_available(arguments: list[str], capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as error:
@@ -40,9 +51,33 @@ def test_help_is_available(arguments: list[str], capsys: pytest.CaptureFixture[s
 def test_module_is_executable_from_repository_root() -> None:
     result = subprocess.run(
         [sys.executable, "-m", "src.cli", "--help"],
-        capture_output=True, text=True, check=True, timeout=10,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
     )
-    assert "{generate,inventory,profile,classify,status,mask,validate,all}" in result.stdout
+    assert "{generate,inventory,profile,classify,status,drift,mask,validate,all}" in result.stdout
+
+
+def test_drift_modes_are_read_only_unless_write_is_explicit(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    drift = Mock()
+    drift.report.return_value = SimpleNamespace(has_drift=False, items=(), count=lambda _kind: 0)
+    drift.write_baseline.return_value = {
+        "schemas": 3,
+        "tables": 20,
+        "columns": 109,
+        "constraints": 57,
+        "logical_relationships": 2,
+    }
+    monkeypatch.setattr(cli_main, "build_application", lambda: _context(drift=drift))
+    assert cli.main(["drift"]) == 0
+    assert cli.main(["drift", "--check"]) == 0
+    drift.write_baseline.assert_not_called()
+    assert cli.main(["drift", "--write-baseline"]) == 0
+    drift.write_baseline.assert_called_once_with()
+    assert "columns=109" in capsys.readouterr().out
 
 
 def test_generate_reports_only_aggregate_counts(
@@ -62,15 +97,23 @@ def test_inventory_profile_and_classify_use_application_services(
 ) -> None:
     inventory, profiling, classification = Mock(), Mock(), Mock()
     inventory.run.return_value = {
-        "schemas": 3, "tables": 20, "columns": 109, "primary_keys": 20,
-        "foreign_keys": 12, "unique_constraints": 10, "check_constraints": 15,
+        "schemas": 3,
+        "tables": 20,
+        "columns": 109,
+        "primary_keys": 20,
+        "foreign_keys": 12,
+        "unique_constraints": 10,
+        "check_constraints": 15,
     }
     profiling.run.return_value = {
-        "column_count": 109, "pattern_evidence_column_count": 71,
-        "suspicious_column_count": 30, "redacted_sample_count": 220,
+        "column_count": 109,
+        "pattern_evidence_column_count": 71,
+        "suspicious_column_count": 30,
+        "redacted_sample_count": 220,
     }
     classification.run.return_value = {
-        "columns": 109, "categories": {"Non-PII": 50, "PII": 59},
+        "columns": 109,
+        "categories": {"Non-PII": 50, "PII": 59},
         "statuses": {"confirmed": 109},
     }
     context = _context(inventory=inventory, profiling=profiling, classification=classification)
@@ -92,12 +135,13 @@ def test_mask_modes_and_validate_report_aggregate_results(
         {"tables": 20, "rows": 2063, "validations": 9},
     ]
     validation.run.return_value = {
-        "tables": 20, "rows": 2063, "validations": 9,
-        "checksum": "b" * 64, "idempotent": None,
+        "tables": 20,
+        "rows": 2063,
+        "validations": 9,
+        "checksum": "b" * 64,
+        "idempotent": None,
     }
-    monkeypatch.setattr(
-        cli_main, "build_application", lambda: _context(masking=masking, validation=validation)
-    )
+    monkeypatch.setattr(cli_main, "build_application", lambda: _context(masking=masking, validation=validation))
     assert cli.main(["mask", "--dry-run"]) == 0
     assert cli.main(["mask", "--validate-only"]) == 0
     assert cli.main(["validate"]) == 0
@@ -113,10 +157,17 @@ def test_status_has_stable_readable_aggregate_output(
 ) -> None:
     status = Mock()
     status.run.return_value = {
-        "postgresql": "reachable", "source_schemas": 3, "source_tables": 20,
-        "source_rows": 2063, "masked_tables": 20, "masked_rows": 2063,
-        "registry": "available", "registry_columns": 109, "manifest": "available",
-        "last_validation": "available", "branch": "refactor/modular-architecture",
+        "postgresql": "reachable",
+        "source_schemas": 3,
+        "source_tables": 20,
+        "source_rows": 2063,
+        "masked_tables": 20,
+        "masked_rows": 2063,
+        "registry": "available",
+        "registry_columns": 109,
+        "manifest": "available",
+        "last_validation": "available",
+        "branch": "refactor/modular-architecture",
         "status": "ready",
     }
     monkeypatch.setattr(cli_main, "build_application", lambda: _context(status=status))
@@ -146,11 +197,15 @@ def test_all_uses_pipeline_and_prints_concrete_summary(
 ) -> None:
     pipeline = Mock()
     pipeline.run.return_value = PipelineResult(
-        phases=tuple(PhaseResult(name, 0.001, {}) for name in (
-            "generate", "inventory", "profile", "classify", "mask", "validate"
-        )),
-        rows=2063, classified_columns=109, masked_tables=20,
-        validations=9, checksum="c" * 64,
+        phases=tuple(
+            PhaseResult(name, 0.001, {})
+            for name in ("generate", "inventory", "profile", "classify", "mask", "validate")
+        ),
+        rows=2063,
+        classified_columns=109,
+        masked_tables=20,
+        validations=9,
+        checksum="c" * 64,
     )
     context = _context()
     monkeypatch.setattr(cli_main, "build_application", lambda: context)

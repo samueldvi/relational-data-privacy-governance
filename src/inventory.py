@@ -13,26 +13,54 @@ from psycopg import sql
 
 from src.infrastructure.database.connection import get_connection
 
-
 SOURCE_SCHEMAS = ("billing", "crm", "hr")
 OUTPUT_DIRECTORY = Path("output")
 INVENTORY_PATH = OUTPUT_DIRECTORY / "inventory.csv"
 RELATIONSHIPS_PATH = OUTPUT_DIRECTORY / "logical_relationships.csv"
 
 INVENTORY_FIELDS = (
-    "schema_name", "table_name", "column_name", "ordinal_position", "data_type",
-    "udt_name", "character_maximum_length", "numeric_precision", "numeric_scale",
-    "is_nullable", "column_default", "is_primary_key", "is_unique",
-    "is_foreign_key", "constraint_name", "referenced_schema", "referenced_table",
-    "referenced_column", "check_constraint", "table_row_count",
+    "schema_name",
+    "table_name",
+    "column_name",
+    "ordinal_position",
+    "data_type",
+    "udt_name",
+    "character_maximum_length",
+    "numeric_precision",
+    "numeric_scale",
+    "is_nullable",
+    "column_default",
+    "is_primary_key",
+    "is_unique",
+    "is_foreign_key",
+    "constraint_name",
+    "referenced_schema",
+    "referenced_table",
+    "referenced_column",
+    "check_constraint",
+    "table_row_count",
 )
 
 RELATIONSHIP_FIELDS = (
-    "source_schema", "source_table", "source_column", "target_schema", "target_table",
-    "target_column", "relationship_status", "type_compatible", "source_non_null_count",
-    "source_distinct_count", "matched_distinct_count", "match_percentage",
-    "orphan_count", "target_is_unique", "name_similarity", "cardinality",
-    "cross_schema", "evidence", "review_note",
+    "source_schema",
+    "source_table",
+    "source_column",
+    "target_schema",
+    "target_table",
+    "target_column",
+    "relationship_status",
+    "type_compatible",
+    "source_non_null_count",
+    "source_distinct_count",
+    "matched_distinct_count",
+    "match_percentage",
+    "orphan_count",
+    "target_is_unique",
+    "name_similarity",
+    "cardinality",
+    "cross_schema",
+    "evidence",
+    "review_note",
 )
 
 CONFIRMED_LOGICAL_RELATIONSHIPS = {
@@ -61,8 +89,12 @@ class RelationshipKey:
 
     def as_tuple(self) -> tuple[str, ...]:
         return (
-            self.source_schema, self.source_table, self.source_column,
-            self.target_schema, self.target_table, self.target_column,
+            self.source_schema,
+            self.source_table,
+            self.source_column,
+            self.target_schema,
+            self.target_table,
+            self.target_column,
         )
 
 
@@ -83,11 +115,19 @@ def _fetch_columns(cursor: Any) -> list[dict[str, Any]]:
         (list(SOURCE_SCHEMAS),),
     )
     fields = (
-        "schema_name", "table_name", "column_name", "ordinal_position", "data_type",
-        "udt_name", "character_maximum_length", "numeric_precision", "numeric_scale",
-        "is_nullable", "column_default",
+        "schema_name",
+        "table_name",
+        "column_name",
+        "ordinal_position",
+        "data_type",
+        "udt_name",
+        "character_maximum_length",
+        "numeric_precision",
+        "numeric_scale",
+        "is_nullable",
+        "column_default",
     )
-    return [dict(zip(fields, row)) for row in cursor.fetchall()]
+    return [dict(zip(fields, row, strict=True)) for row in cursor.fetchall()]
 
 
 def _fetch_table_counts(cursor: Any, tables: list[tuple[str, str]]) -> dict[tuple[str, str], int]:
@@ -137,11 +177,17 @@ def _fetch_constraint_members(cursor: Any) -> list[dict[str, Any]]:
         (list(SOURCE_SCHEMAS),),
     )
     fields = (
-        "schema_name", "table_name", "column_name", "constraint_name",
-        "constraint_type", "referenced_schema", "referenced_table",
-        "referenced_column", "check_constraint",
+        "schema_name",
+        "table_name",
+        "column_name",
+        "constraint_name",
+        "constraint_type",
+        "referenced_schema",
+        "referenced_table",
+        "referenced_column",
+        "check_constraint",
     )
-    return [dict(zip(fields, row)) for row in cursor.fetchall()]
+    return [dict(zip(fields, row, strict=True)) for row in cursor.fetchall()]
 
 
 def collect_inventory(connection: Any) -> list[dict[str, Any]]:
@@ -161,10 +207,15 @@ def collect_inventory(connection: Any) -> list[dict[str, Any]]:
         key = ColumnKey(column["schema_name"], column["table_name"], column["column_name"])
         members = constraints[key]
 
-        def joined(field: str, *, constraint_type: str | None = None) -> str:
+        def joined(
+            field: str,
+            *,
+            constraint_type: str | None = None,
+            constraint_members: tuple[dict[str, Any], ...] = tuple(members),
+        ) -> str:
             values = {
                 str(member[field])
-                for member in members
+                for member in constraint_members
                 if member[field] is not None
                 and (constraint_type is None or member["constraint_type"] == constraint_type)
             }
@@ -172,17 +223,19 @@ def collect_inventory(connection: Any) -> list[dict[str, Any]]:
 
         types = {member["constraint_type"] for member in members}
         row = dict(column)
-        row.update({
-            "is_primary_key": "true" if "p" in types else "false",
-            "is_unique": "true" if "u" in types else "false",
-            "is_foreign_key": "true" if "f" in types else "false",
-            "constraint_name": joined("constraint_name"),
-            "referenced_schema": joined("referenced_schema", constraint_type="f"),
-            "referenced_table": joined("referenced_table", constraint_type="f"),
-            "referenced_column": joined("referenced_column", constraint_type="f"),
-            "check_constraint": joined("check_constraint", constraint_type="c"),
-            "table_row_count": table_counts[(column["schema_name"], column["table_name"])],
-        })
+        row.update(
+            {
+                "is_primary_key": "true" if "p" in types else "false",
+                "is_unique": "true" if "u" in types else "false",
+                "is_foreign_key": "true" if "f" in types else "false",
+                "constraint_name": joined("constraint_name"),
+                "referenced_schema": joined("referenced_schema", constraint_type="f"),
+                "referenced_table": joined("referenced_table", constraint_type="f"),
+                "referenced_column": joined("referenced_column", constraint_type="f"),
+                "check_constraint": joined("check_constraint", constraint_type="c"),
+                "table_row_count": table_counts[(column["schema_name"], column["table_name"])],
+            }
+        )
         inventory.append(row)
     return inventory
 
@@ -258,8 +311,10 @@ def _relationship_metrics(cursor: Any, relationship: RelationshipKey) -> dict[st
             LEFT JOIN {target} AS t ON t.{target_column} = s.{source_column}
             """
         ).format(
-            source_column=source_column, target_column=target_column,
-            source=source, target=target,
+            source_column=source_column,
+            target_column=target_column,
+            source=source,
+            target=target,
         )
     )
     source_non_null, source_distinct, matched_distinct, orphan_count = cursor.fetchone()
@@ -275,17 +330,11 @@ def _relationship_metrics(cursor: Any, relationship: RelationshipKey) -> dict[st
 
 
 def collect_relationships(connection: Any, inventory: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    column_lookup = {
-        ColumnKey(row["schema_name"], row["table_name"], row["column_name"]): row
-        for row in inventory
-    }
+    column_lookup = {ColumnKey(row["schema_name"], row["table_name"], row["column_name"]): row for row in inventory}
     with connection.cursor() as cursor:
         declared = _fetch_declared_relationships(cursor)
         single_column_unique_keys = _fetch_single_column_unique_keys(cursor)
-        target_columns = [
-            (key, row) for key, row in column_lookup.items()
-            if key in single_column_unique_keys
-        ]
+        target_columns = [(key, row) for key, row in column_lookup.items() if key in single_column_unique_keys]
         declared_set = {relationship.as_tuple() for relationship in declared}
         candidates = set(declared)
         candidates.update(RelationshipKey(*values) for values in CONFIRMED_LOGICAL_RELATIONSHIPS)
@@ -295,8 +344,12 @@ def collect_relationships(connection: Any, inventory: list[dict[str, Any]]) -> l
                 continue
             for target_key, target_row in target_columns:
                 candidate = RelationshipKey(
-                    source_key.schema, source_key.table, source_key.column,
-                    target_key.schema, target_key.table, target_key.column,
+                    source_key.schema,
+                    source_key.table,
+                    source_key.column,
+                    target_key.schema,
+                    target_key.table,
+                    target_key.column,
                 )
                 if source_key == target_key or candidate.as_tuple() in declared_set:
                     continue
@@ -307,16 +360,14 @@ def collect_relationships(connection: Any, inventory: list[dict[str, Any]]) -> l
 
         relationships = []
         for relationship in sorted(candidates, key=RelationshipKey.as_tuple):
-            source_row = column_lookup[ColumnKey(
-                relationship.source_schema, relationship.source_table, relationship.source_column
-            )]
-            target_row = column_lookup[ColumnKey(
-                relationship.target_schema, relationship.target_table, relationship.target_column
-            )]
+            source_row = column_lookup[
+                ColumnKey(relationship.source_schema, relationship.source_table, relationship.source_column)
+            ]
+            target_row = column_lookup[
+                ColumnKey(relationship.target_schema, relationship.target_table, relationship.target_column)
+            ]
             compatible = _type_compatible(source_row["udt_name"], target_row["udt_name"])
-            target_key = ColumnKey(
-                relationship.target_schema, relationship.target_table, relationship.target_column
-            )
+            target_key = ColumnKey(relationship.target_schema, relationship.target_table, relationship.target_column)
             target_unique = target_key in single_column_unique_keys
             metrics = _relationship_metrics(cursor, relationship)
             confirmed = relationship.as_tuple() in CONFIRMED_LOGICAL_RELATIONSHIPS
@@ -325,7 +376,9 @@ def collect_relationships(connection: Any, inventory: list[dict[str, Any]]) -> l
                 status = "declared"
                 review_note = "Foreign key dichiarata nel catalogo PostgreSQL."
             elif (
-                confirmed and compatible and target_unique
+                confirmed
+                and compatible
+                and target_unique
                 and metrics["orphan_count"] == 0
                 and metrics["match_percentage"] == "100.00"
             ):
@@ -389,7 +442,7 @@ def generate_inventory(output_directory: Path = OUTPUT_DIRECTORY) -> dict[str, A
                 """,
                 (list(SOURCE_SCHEMAS),),
             )
-            constraint_counts = dict(cursor.fetchall())
+            constraint_counts: dict[str, int] = dict(cursor.fetchall())
 
     inventory_path = output_directory / "inventory.csv"
     relationships_path = output_directory / "logical_relationships.csv"
@@ -404,7 +457,9 @@ def generate_inventory(output_directory: Path = OUTPUT_DIRECTORY) -> dict[str, A
         "unique_constraints": constraint_counts.get("u", 0),
         "check_constraints": constraint_counts.get("c", 0),
         "declared_relationships": sum(row["relationship_status"] == "declared" for row in relationships),
-        "confirmed_logical_relationships": sum(row["relationship_status"] == "logical_confirmed" for row in relationships),
+        "confirmed_logical_relationships": sum(
+            row["relationship_status"] == "logical_confirmed" for row in relationships
+        ),
         "inventory_path": inventory_path,
         "relationships_path": relationships_path,
     }

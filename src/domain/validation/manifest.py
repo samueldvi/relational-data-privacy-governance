@@ -39,9 +39,7 @@ def canonical_table_payload(
     return json.dumps(document, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
-def table_checksum(
-    schema_name: str, table_name: str, columns: list[str], rows: list[tuple[Any, ...]]
-) -> str:
+def table_checksum(schema_name: str, table_name: str, columns: list[str], rows: list[tuple[Any, ...]]) -> str:
     return hashlib.sha256(canonical_table_payload(schema_name, table_name, columns, rows)).hexdigest()
 
 

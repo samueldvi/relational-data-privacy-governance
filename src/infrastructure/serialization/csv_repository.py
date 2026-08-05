@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import csv
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 
 class CsvRepository:

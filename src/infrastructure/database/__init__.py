@@ -6,6 +6,9 @@ from src.infrastructure.database.postgres_repositories import (
 )
 
 __all__ = [
-    "PostgresMaskedRepository", "PostgresMetadataRepository", "PostgresSourceRepository",
-    "connection_factory", "get_connection",
+    "PostgresMaskedRepository",
+    "PostgresMetadataRepository",
+    "PostgresSourceRepository",
+    "connection_factory",
+    "get_connection",
 ]

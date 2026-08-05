@@ -7,9 +7,8 @@ import os
 import re
 import subprocess
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
-
 
 SENSITIVE_FILENAMES = re.compile(
     r"(^|/)\.env$|(^|/)(?:credentials?|secrets?)(?:[./]|$)|"
@@ -26,17 +25,23 @@ CONTENT_PATTERNS = (
     ("GitHub token", re.compile(r"\bgh[pousr]_[A-Za-z0-9_]{20,}\b")),
     ("AWS access key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
 )
-ASSIGNMENT_PATTERN = re.compile(
-    r"(?im)^\s*(?:POSTGRES_PASSWORD|MASKING_SECRET)\s*(?:=|:)\s*[\"']?([^\s\"'#]+)"
-)
+ASSIGNMENT_PATTERN = re.compile(r"(?im)^\s*(?:POSTGRES_PASSWORD|MASKING_SECRET)\s*(?:=|:)\s*[\"']?([^\s\"'#]+)")
 ALLOWED_MARKERS = (
-    "change_me", "replace_with_", "synthetic", "not-for-production", "example", "placeholder",
+    "change_me",
+    "replace_with_",
+    "synthetic",
+    "not-for-production",
+    "example",
+    "placeholder",
 )
 
 
 def tracked_files() -> list[Path]:
     result = subprocess.run(
-        ["git", "ls-files", "-z"], capture_output=True, check=True, timeout=15,
+        ["git", "ls-files", "-z"],
+        capture_output=True,
+        check=True,
+        timeout=15,
     )
     return [Path(item.decode("utf-8")) for item in result.stdout.split(b"\0") if item]
 

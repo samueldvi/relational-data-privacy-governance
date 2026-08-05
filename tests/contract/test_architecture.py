@@ -9,7 +9,6 @@ import pytest
 
 from src.application.pipeline import PIPELINE_PHASES
 
-
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 
@@ -69,20 +68,20 @@ def test_python_sources_do_not_hardcode_virtualenv_interpreter() -> None:
 
 def test_pipeline_order_has_one_authoritative_definition() -> None:
     assert PIPELINE_PHASES == ("generate", "inventory", "profile", "classify", "mask", "validate")
-    occurrences = sum(
-        "PIPELINE_PHASES =" in path.read_text(encoding="utf-8")
-        for path in SRC.rglob("*.py")
-    )
+    occurrences = sum("PIPELINE_PHASES =" in path.read_text(encoding="utf-8") for path in SRC.rglob("*.py"))
     assert occurrences == 1
 
 
 @pytest.mark.parametrize(
-    "command", ("generate", "inventory", "profile", "classify", "mask", "validate", "status", "all")
+    "command", ("generate", "inventory", "profile", "classify", "drift", "mask", "validate", "status", "all")
 )
 def test_public_cli_commands_remain_compatible(command: str) -> None:
     result = subprocess.run(
         [sys.executable, "-m", "src.cli", command, "--help"],
-        cwd=ROOT, capture_output=True, text=True, timeout=10,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=10,
     )
     assert result.returncode == 0, result.stderr
     assert "usage:" in result.stdout

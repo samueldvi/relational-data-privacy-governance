@@ -12,7 +12,10 @@ from scripts.check_repository_safety import scan_files
 def test_current_repository_passes_safety_check() -> None:
     result = subprocess.run(
         [sys.executable, "scripts/check_repository_safety.py"],
-        capture_output=True, text=True, check=True, timeout=20,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=20,
     )
     assert "0 violations" in result.stdout
 
@@ -70,7 +73,11 @@ def test_scanner_allows_documentation_words_placeholders_and_ci_synthetic_values
 
 def test_env_is_not_tracked_and_no_database_dump_is_versioned() -> None:
     files = subprocess.run(
-        ["git", "ls-files"], capture_output=True, text=True, check=True, timeout=10,
+        ["git", "ls-files"],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
     ).stdout.splitlines()
     assert ".env" not in files
     assert not any(path.endswith((".dump", ".sql.gz", ".pem", ".key", ".p12")) for path in files)

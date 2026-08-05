@@ -10,7 +10,6 @@ from src.domain.profiling.normalizers import normalize_iban, normalize_name
 from src.domain.validation.manifest import finalize_manifest, table_checksum
 from src.generate_data import synthetic_italian_iban, synthetic_tax_code
 
-
 SECRET = "domain-test-secret-with-enough-variation-2026"
 
 
@@ -35,6 +34,4 @@ def test_canonical_checksum_is_order_stable_and_typed() -> None:
     first = table_checksum("masked_crm", "sample", ["id", "amount", "day", "empty"], rows)
     second = table_checksum("masked_crm", "sample", ["id", "amount", "day", "empty"], rows)
     assert first == second and len(first) == 64
-    assert finalize_manifest({"tables": {"sample": first}}) == finalize_manifest(
-        {"tables": {"sample": first}}
-    )
+    assert finalize_manifest({"tables": {"sample": first}}) == finalize_manifest({"tables": {"sample": first}})

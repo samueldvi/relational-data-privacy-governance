@@ -13,8 +13,17 @@ from src.domain.models.relationship import Relationship, RelationshipStatus
 from src.domain.models.validation import ValidationResult
 
 __all__ = [
-    "ClassificationRecord", "ColumnMetadata", "ColumnProfile", "ConsistencyGroup",
-    "MaskingManifest", "MaskingRule", "MaskingStatistics", "PiiCategory",
-    "Relationship", "RelationshipStatus", "ReviewStatus", "TableManifest",
+    "ClassificationRecord",
+    "ColumnMetadata",
+    "ColumnProfile",
+    "ConsistencyGroup",
+    "MaskingManifest",
+    "MaskingRule",
+    "MaskingStatistics",
+    "PiiCategory",
+    "Relationship",
+    "RelationshipStatus",
+    "ReviewStatus",
+    "TableManifest",
     "ValidationResult",
 ]

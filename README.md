@@ -19,7 +19,7 @@ Il repository prepara concetti e controlli trasferibili verso Informatica Data P
 | Righe sintetiche sorgente / masked | 2.063 / 2.063 |
 | Regole di masking | 12 |
 | Consistency group | 9 |
-| Test automatici | 159 superati nella suite finale |
+| Test automatici | 181 superati con i controlli supply-chain |
 | Manifest | checksum per tabella e globale, deterministici |
 
 La suite verifica inoltre rollback completo, idempotenza con lo stesso secret,
@@ -66,7 +66,7 @@ cp .env.example .env
 # Sostituire in .env i placeholder con valori locali non riutilizzati altrove.
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 docker compose up -d
 python -m src.cli all
 ```
@@ -75,6 +75,24 @@ Il container inizializza gli script `sql/00_...`–`sql/05_...` solo alla prima
 creazione del volume. Per una validazione controllata da ambiente pulito usare
 lo script documentato in `scripts/validate_clean_environment.sh`; il reset non
 è mai implicito.
+
+### Container applicativo
+
+L'immagine applicativa usa Python 3.12 slim pinning per digest, installa solo le
+dipendenze runtime e opera come UID/GID `10001`. Il root filesystem è read-only;
+solo `/tmp`, `output/` e le copie effimere di `config/` e `docs/` sono scrivibili.
+`.env`, cache, test e output locali sono esclusi dal build context. I secret sono
+passati solo a runtime da Compose.
+
+```bash
+docker compose build privacy-pipeline
+docker compose run --rm privacy-pipeline python -m src.cli status
+docker compose run --rm privacy-pipeline python -m src.cli all
+```
+
+Il servizio attende l'healthcheck PostgreSQL. `pipeline_output` conserva solo
+gli artefatti rigenerabili; `docker compose down --volumes` rimuove database e
+output containerizzati quando è richiesto un reset esplicito.
 
 ## CLI
 
@@ -90,6 +108,9 @@ lo script documentato in `scripts/validate_clean_environment.sh`; il reset non
 | `python -m src.cli mask --validate-only` | Controllo read-only dello stato masked |
 | `python -m src.cli validate` | Validazione integrata e confronto col manifest |
 | `python -m src.cli validate --check-idempotence` | Due esecuzioni equivalenti e confronto deterministico |
+| `python -m src.cli drift` | Report leggibile del drift senza modificare la baseline |
+| `python -m src.cli drift --check` | Gate CI non nullo per drift strutturale o di governance |
+| `python -m src.cli drift --write-baseline` | Aggiornamento esplicito della baseline dopo review |
 | `python -m src.cli all` | Pipeline completa, interrotta al primo errore |
 
 Ogni comando restituisce un exit code non nullo in caso di errore e stampa solo
@@ -121,6 +142,9 @@ checksum, mai valori o mapping.
 - Gli schemi sorgente sono verificati prima e dopo il masking e restano immutati.
 - `billing.pagamenti.riferimento_bancario` resta `Dubbio`: D-008 autorizza solo
   `redact_detected_patterns`, con rischio residuo esplicitamente accettato.
+- `config/schema_baseline.yml` versiona struttura, constraint, relazioni logiche
+  approvate, classificazioni, regole e consistency group. La CI esegue solo il
+  confronto read-only; l'aggiornamento richiede sempre `--write-baseline`.
 
 Il repository è un ambiente didattico e dimostrativo. Non deve elaborare dati
 reali senza threat model, gestione professionale delle chiavi, controlli IAM,
@@ -134,6 +158,8 @@ valutazione legale, monitoraggio e revisione del data owner.
 - Il riferimento bancario eterogeneo può contenere valori sensibili non riconosciuti dalle regex.
 - Non è disponibile un processo di re-identificazione: il mapping non viene conservato.
 - Funzioni, nomi, licenze e capacità di Informatica devono essere verificati su un ambiente autorizzato.
+- I benchmark 20k/100k sono workload cumulativi ripetuti, non prove su un singolo database di quella dimensione;
+  metodologia e risultati locali sono in [`docs/PERFORMANCE_BASELINE.md`](docs/PERFORMANCE_BASELINE.md).
 
 ## Trasferimento verso Informatica
 
@@ -163,7 +189,8 @@ connessione al database o esecuzione del masking.
 ├── src/                     # pipeline e CLI Python
 ├── tests/                   # test unitari, integrazione, CLI, CI e sicurezza
 ├── compose.yml
-├── requirements.txt
+├── requirements-runtime.txt  # dipendenze minime dell'immagine
+├── requirements.txt          # runtime + test
 └── README.md
 ```
 
@@ -172,10 +199,26 @@ connessione al database o esecuzione del masking.
 ```bash
 python -m src.cli status
 python -m src.cli all
-pytest -q
+python -m src.cli drift --check
+ruff check .
+ruff format --check .
+mypy src
+coverage run -m pytest -q
+coverage report
+coverage xml
+pre-commit run --all-files
 python scripts/check_repository_safety.py
 git diff --check
 ```
+
+La baseline iniziale misurata sul branch di hardening è `23,6%` per i soli 14
+test unitari e `87,7%` per la suite completa iniziale di 159 test con
+PostgreSQL. Dopo il blocco schema drift, 171 test raggiungono `88,3%`; i
+controlli di container, benchmark e supply-chain portano la suite a 181 test. Il gate
+versionato usa `fail_under = 87`: mantiene un margine minimo per gli
+arrotondamenti, ma fallisce in caso di regressione sostanziale rispetto alla
+baseline verificata. `coverage.xml` è generato per le integrazioni esterne e
+non è versionato.
 
 Le decisioni effettivamente approvate sono versionate in
 [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md); le regole sono descritte in

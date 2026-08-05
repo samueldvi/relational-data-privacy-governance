@@ -8,15 +8,19 @@ from collections.abc import Sequence
 
 from src.bootstrap import build_application, build_pipeline
 from src.cli.commands import all as all_command
-from src.cli.commands import classify, generate, inventory, mask, profile, status, validate
+from src.cli.commands import classify, drift, generate, inventory, mask, profile, status, validate
 from src.generate_data import DEFAULT_SEED
 from src.shared.errors import PrivacyGovernanceError
 
-
 COMMANDS = {
-    "generate": generate.execute, "inventory": inventory.execute,
-    "profile": profile.execute, "classify": classify.execute,
-    "mask": mask.execute, "validate": validate.execute, "status": status.execute,
+    "generate": generate.execute,
+    "inventory": inventory.execute,
+    "profile": profile.execute,
+    "classify": classify.execute,
+    "mask": mask.execute,
+    "validate": validate.execute,
+    "status": status.execute,
+    "drift": drift.execute,
 }
 
 
@@ -38,6 +42,14 @@ def build_parser() -> argparse.ArgumentParser:
         ("status", "Show aggregate project readiness"),
     ):
         subparsers.add_parser(name, help=help_text)
+    drift_parser = subparsers.add_parser("drift", help="Compare PostgreSQL metadata with the approved baseline")
+    drift_mode = drift_parser.add_mutually_exclusive_group()
+    drift_mode.add_argument("--check", action="store_true", help="Fail when drift is detected")
+    drift_mode.add_argument(
+        "--write-baseline",
+        action="store_true",
+        help="Explicitly replace the versioned baseline with current reviewed metadata",
+    )
     mask_parser = subparsers.add_parser("mask", help="Load or validate masked schemas")
     mask_mode = mask_parser.add_mutually_exclusive_group()
     mask_mode.add_argument("--dry-run", action="store_true")

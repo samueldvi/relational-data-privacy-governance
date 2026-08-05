@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import argparse
 import re
-from collections import Counter, defaultdict
+from collections import Counter
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, cast
 
 from psycopg import sql
 
@@ -45,22 +46,21 @@ from src.masking_manifest import (
     write_manifest,
 )
 
-
 EXECUTION_CONFIG_PATH = Path("config/masking_execution.yml")
 SOURCE_SCHEMAS = ("billing", "crm", "hr")
 SCHEMA_MAPPING = {
-    "crm": "masked_crm", "hr": "masked_hr", "billing": "masked_billing",
+    "crm": "masked_crm",
+    "hr": "masked_hr",
+    "billing": "masked_billing",
 }
 MASKED_SCHEMAS = tuple(SCHEMA_MAPPING.values())
 SUPPORTED_AMBIGUOUS_STRATEGIES = {
-    "block", "redact_detected_patterns", "preserve_with_approved_exception",
+    "block",
+    "redact_detected_patterns",
+    "preserve_with_approved_exception",
 }
-PARTIAL_CARD_PATTERN = re.compile(
-    r"(?<!\w)(?:\d[ -]?){4}(?:[*Xx][*Xx -]{2,})(?:\d[ -]?){4}(?!\w)"
-)
-RECOGNIZABLE_BANK_REFERENCE_PATTERN = re.compile(
-    r"\b(?:SYNREF|CRO|TRN|BANKREF)[A-Z0-9-]{4,}\b", re.IGNORECASE
-)
+PARTIAL_CARD_PATTERN = re.compile(r"(?<!\w)(?:\d[ -]?){4}(?:[*Xx][*Xx -]{2,})(?:\d[ -]?){4}(?!\w)")
+RECOGNIZABLE_BANK_REFERENCE_PATTERN = re.compile(r"\b(?:SYNREF|CRO|TRN|BANKREF)[A-Z0-9-]{4,}\b", re.IGNORECASE)
 
 
 class MaskingPipelineError(Exception):
@@ -137,14 +137,20 @@ def _fetch_declared_foreign_keys(cursor: Any) -> list[dict[str, Any]]:
         (list(SOURCE_SCHEMAS),),
     )
     fields = (
-        "source_schema", "source_table", "constraint_name", "target_schema",
-        "target_table", "definition", "source_columns", "target_columns",
+        "source_schema",
+        "source_table",
+        "constraint_name",
+        "target_schema",
+        "target_table",
+        "definition",
+        "source_columns",
+        "target_columns",
     )
-    return [dict(zip(fields, row)) for row in cursor.fetchall()]
+    return [dict(zip(fields, row, strict=True)) for row in cursor.fetchall()]
 
 
 def calculate_load_order(tables: list[str], foreign_keys: list[dict[str, Any]]) -> list[str]:
-    dependencies = {table: set() for table in tables}
+    dependencies: dict[str, set[str]] = {table: set() for table in tables}
     for foreign_key in foreign_keys:
         child = f"{foreign_key['source_schema']}.{foreign_key['source_table']}"
         parent = f"{foreign_key['target_schema']}.{foreign_key['target_table']}"
@@ -173,9 +179,10 @@ def _validate_execution_decision(
     record = registry_by_column.get(column)
     if not record or record["pii_category"] != "Dubbio" or record["masking_rule"] != "review_before_masking":
         raise PreconditionError("The controlled bank-reference column must remain Dubbio with review_before_masking.")
-    decision = execution.get("ambiguous_columns", {}).get(column, {
-        "strategy": execution["default_ambiguous_strategy"]
-    })
+    decision = cast(
+        dict[str, Any],
+        execution.get("ambiguous_columns", {}).get(column, {"strategy": execution["default_ambiguous_strategy"]}),
+    )
     strategy = decision.get("strategy")
     if strategy not in SUPPORTED_AMBIGUOUS_STRATEGIES:
         raise PreconditionError("Unsupported ambiguous-column strategy.")
@@ -196,10 +203,7 @@ def _validate_execution_decision(
 
 def _registry() -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
     records = _load_yaml(REGISTRY_PATH)["columns"]
-    indexed = {
-        f"{record['schema_name']}.{record['table_name']}.{record['column_name']}": record
-        for record in records
-    }
+    indexed = {f"{record['schema_name']}.{record['table_name']}.{record['column_name']}": record for record in records}
     return records, indexed
 
 
@@ -223,10 +227,16 @@ def validate_preconditions(cursor: Any) -> dict[str, Any]:
     foreign_keys = _fetch_declared_foreign_keys(cursor)
     load_order = calculate_load_order(source_tables, foreign_keys)
     return {
-        "secret": secret, "records": records, "registry_by_column": registry_by_column,
-        "source_tables": source_tables, "foreign_keys": foreign_keys,
-        "load_order": load_order, "execution": execution, "decision": decision,
-        "reference_date": reference_date, "masking_summary": masking_summary,
+        "secret": secret,
+        "records": records,
+        "registry_by_column": registry_by_column,
+        "source_tables": source_tables,
+        "foreign_keys": foreign_keys,
+        "load_order": load_order,
+        "execution": execution,
+        "decision": decision,
+        "reference_date": reference_date,
+        "masking_summary": masking_summary,
     }
 
 
@@ -287,29 +297,37 @@ def _masker_for_domain(
     domain: str, *, secret: str, namespace: str
 ) -> tuple[Callable[[str], str], Callable[[str, int], str]]:
     if domain == "email_address":
-        return normalize_email, lambda value, counter: mask_email(
-            value, secret=secret, namespace=namespace, counter=counter
-        ) or ""
+        return (
+            normalize_email,
+            lambda value, counter: mask_email(value, secret=secret, namespace=namespace, counter=counter) or "",
+        )
     if domain == "italian_tax_code":
-        return normalize_tax_code, lambda value, counter: mask_tax_code(
-            value, secret=secret, namespace=namespace, counter=counter
-        ) or ""
+        return (
+            normalize_tax_code,
+            lambda value, counter: mask_tax_code(value, secret=secret, namespace=namespace, counter=counter) or "",
+        )
     if domain == "italian_iban":
-        return normalize_iban, lambda value, counter: mask_iban(
-            value, secret=secret, namespace=namespace, counter=counter
-        ) or ""
+        return (
+            normalize_iban,
+            lambda value, counter: mask_iban(value, secret=secret, namespace=namespace, counter=counter) or "",
+        )
     if domain == "phone_number":
-        return normalize_phone, lambda value, counter: mask_phone(
-            value, secret=secret, namespace=namespace, counter=counter
-        ) or ""
+        return (
+            normalize_phone,
+            lambda value, counter: mask_phone(value, secret=secret, namespace=namespace, counter=counter) or "",
+        )
     if domain == "person_name":
-        return normalize_name, lambda value, counter: mask_person_name(
-            value, secret=secret, namespace=namespace, counter=counter
-        ) or ""
+        return (
+            normalize_name,
+            lambda value, counter: mask_person_name(value, secret=secret, namespace=namespace, counter=counter) or "",
+        )
     if domain == "postal_address":
-        return normalize_name, lambda value, counter: mask_postal_address(
-            value, secret=secret, namespace=namespace, counter=counter
-        ) or ""
+        return (
+            normalize_name,
+            lambda value, counter: (
+                mask_postal_address(value, secret=secret, namespace=namespace, counter=counter) or ""
+            ),
+        )
     raise InvalidConfigurationError("No batch masking primitive exists for the requested domain.")
 
 
@@ -323,7 +341,8 @@ def _column_values(
 
 
 def _prepare_batch_mappings(
-    context: dict[str, Any], columns_by_table: dict[str, list[str]],
+    context: dict[str, Any],
+    columns_by_table: dict[str, list[str]],
     source_data: dict[str, list[tuple[Any, ...]]],
 ) -> tuple[dict[str, dict[str, str]], dict[tuple[str, str], dict[str, str]], dict[str, Any]]:
     groups = _load_yaml(CONSISTENCY_GROUPS_PATH)["groups"]
@@ -332,15 +351,10 @@ def _prepare_batch_mappings(
     collision_details: dict[str, Any] = {}
     for group_name, group in groups.items():
         values = [
-            value for column in group["columns"]
-            for value in _column_values(column, columns_by_table, source_data)
+            value for column in group["columns"] for value in _column_values(column, columns_by_table, source_data)
         ]
-        normalizer, generator = _masker_for_domain(
-            group["data_domain"], secret=secret, namespace=group["namespace"]
-        )
-        resolution = resolve_collisions(
-            values, normalizer=normalizer, candidate_generator=generator
-        )
+        normalizer, generator = _masker_for_domain(group["data_domain"], secret=secret, namespace=group["namespace"])
+        resolution = resolve_collisions(values, normalizer=normalizer, candidate_generator=generator)
         mappings[group_name] = resolution.mapping
         collision_details[group_name] = {
             "values_processed": resolution.statistics.values_processed,
@@ -351,27 +365,17 @@ def _prepare_batch_mappings(
 
     contextual: dict[tuple[str, str], dict[str, str]] = {}
     for rule, domain in (("mask_person_name", "person_name"), ("mask_postal_address", "postal_address")):
-        subjects = sorted({
-            record["data_subject"] for record in context["records"]
-            if record["masking_rule"] == rule
-        })
+        subjects = sorted({record["data_subject"] for record in context["records"] if record["masking_rule"] == rule})
         for subject in subjects:
             columns = [
                 f"{record['schema_name']}.{record['table_name']}.{record['column_name']}"
                 for record in context["records"]
                 if record["masking_rule"] == rule and record["data_subject"] == subject
             ]
-            values = [
-                value for column in columns
-                for value in _column_values(column, columns_by_table, source_data)
-            ]
+            values = [value for column in columns for value in _column_values(column, columns_by_table, source_data)]
             namespace = f"{domain}.{subject}.v1"
-            normalizer, generator = _masker_for_domain(
-                domain, secret=secret, namespace=namespace
-            )
-            resolution = resolve_collisions(
-                values, normalizer=normalizer, candidate_generator=generator
-            )
+            normalizer, generator = _masker_for_domain(domain, secret=secret, namespace=namespace)
+            resolution = resolve_collisions(values, normalizer=normalizer, candidate_generator=generator)
             contextual[(rule, subject)] = resolution.mapping
             collision_details[f"{rule}:{subject}"] = {
                 "values_processed": resolution.statistics.values_processed,
@@ -383,7 +387,8 @@ def _prepare_batch_mappings(
 
 
 def _known_names(
-    records: list[dict[str, Any]], columns_by_table: dict[str, list[str]],
+    records: list[dict[str, Any]],
+    columns_by_table: dict[str, list[str]],
     source_data: dict[str, list[tuple[Any, ...]]],
 ) -> list[str]:
     names = set()
@@ -400,20 +405,20 @@ def redact_bank_reference(value: str | None) -> str | None:
     if redacted is None:
         return None
     redacted = PARTIAL_CARD_PATTERN.sub("[REDACTED_BANK_REFERENCE]", redacted)
-    return RECOGNIZABLE_BANK_REFERENCE_PATTERN.sub(
-        "[REDACTED_BANK_REFERENCE]", redacted
-    )
+    return RECOGNIZABLE_BANK_REFERENCE_PATTERN.sub("[REDACTED_BANK_REFERENCE]", redacted)
 
 
 def _transform_data(
-    context: dict[str, Any], columns_by_table: dict[str, list[str]],
+    context: dict[str, Any],
+    columns_by_table: dict[str, list[str]],
     source_data: dict[str, list[tuple[Any, ...]]],
 ) -> tuple[dict[str, list[tuple[Any, ...]]], dict[str, Any]]:
     group_mappings, contextual_mappings, collision_details = _prepare_batch_mappings(
         context, columns_by_table, source_data
     )
     approved_keys = {
-        key for key, record in context["registry_by_column"].items()
+        key
+        for key, record in context["registry_by_column"].items()
         if record["masking_rule"] == "preserve_technical_key"
     }
     names = _known_names(context["records"], columns_by_table, source_data)
@@ -426,17 +431,15 @@ def _transform_data(
         columns = columns_by_table[table]
         output_rows = []
         for source_row in source_data[table]:
-            row_context = dict(zip(columns, source_row))
+            row_context = dict(zip(columns, source_row, strict=True))
             output_row = []
-            for column_name, value in zip(columns, source_row):
+            for column_name, value in zip(columns, source_row, strict=True):
                 key = f"{table}.{column_name}"
                 record = context["registry_by_column"][key]
                 rule = record["masking_rule"]
                 rule_counts[rule] += 1
                 if rule == "preserve_technical_key":
-                    masked_value = preserve_technical_key(
-                        value, column=key, approved_columns=approved_keys
-                    )
+                    masked_value = preserve_technical_key(value, column=key, approved_columns=approved_keys)
                     preserved_columns.add(key)
                 elif rule == "preserve_value":
                     masked_value = preserve_value(value)
@@ -455,7 +458,9 @@ def _transform_data(
                     transformed_columns.add(key)
                 elif rule == "shift_birth_date":
                     masked_value = shift_birth_date(
-                        value, secret=context["secret"], namespace=f"birth_date.{record['data_subject']}.v1",
+                        value,
+                        secret=context["secret"],
+                        namespace=f"birth_date.{record['data_subject']}.v1",
                         reference_date=context["reference_date"],
                     )
                     transformed_columns.add(key)
@@ -465,13 +470,15 @@ def _transform_data(
                         masked_value = value
                     elif contact_type in {"email", "pec"}:
                         normalizer, generator = _masker_for_domain(
-                            "email_address", secret=context["secret"],
+                            "email_address",
+                            secret=context["secret"],
                             namespace="contact_value.customer.email.v1",
                         )
                         masked_value = generator(str(value), 0)
                     elif contact_type == "telefono":
                         normalizer, generator = _masker_for_domain(
-                            "phone_number", secret=context["secret"],
+                            "phone_number",
+                            secret=context["secret"],
                             namespace="contact_value.customer.phone.v1",
                         )
                         masked_value = generator(str(value), 0)
@@ -482,14 +489,19 @@ def _transform_data(
                     group = record["consistency_group"]
                     group_config = _load_yaml(CONSISTENCY_GROUPS_PATH)["groups"][group]
                     normalizer, _ = _masker_for_domain(
-                        group_config["data_domain"], secret=context["secret"],
+                        group_config["data_domain"],
+                        secret=context["secret"],
                         namespace=group_config["namespace"],
                     )
                     masked_value = value if value in (None, "") else group_mappings[group][normalizer(str(value))]
                     transformed_columns.add(key)
                 elif rule in {"mask_person_name", "mask_postal_address"}:
                     normalizer = normalize_name
-                    masked_value = value if value in (None, "") else contextual_mappings[(rule, record["data_subject"])][normalizer(str(value))]
+                    masked_value = (
+                        value
+                        if value in (None, "")
+                        else contextual_mappings[(rule, record["data_subject"])][normalizer(str(value))]
+                    )
                     transformed_columns.add(key)
                 else:
                     raise InvalidConfigurationError("Registry contains a masking rule unsupported by the loader.")
@@ -505,9 +517,7 @@ def _transform_data(
     }
 
 
-def _create_masked_structure(
-    cursor: Any, context: dict[str, Any], columns_by_table: dict[str, list[str]]
-) -> None:
+def _create_masked_structure(cursor: Any, context: dict[str, Any], columns_by_table: dict[str, list[str]]) -> None:
     for masked_schema in MASKED_SCHEMAS:
         cursor.execute(sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(sql.Identifier(masked_schema)))
         cursor.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(masked_schema)))
@@ -533,12 +543,14 @@ def _create_masked_structure(
             cursor.execute(
                 sql.SQL("CREATE SEQUENCE {} OWNED BY {}.{}").format(
                     _qualified(masked_schema, sequence_name),
-                    _qualified(masked_schema, table_name), sql.Identifier(column_name),
+                    _qualified(masked_schema, table_name),
+                    sql.Identifier(column_name),
                 )
             )
             cursor.execute(
                 sql.SQL("ALTER TABLE {} ALTER COLUMN {} SET DEFAULT nextval({}::regclass)").format(
-                    _qualified(masked_schema, table_name), sql.Identifier(column_name),
+                    _qualified(masked_schema, table_name),
+                    sql.Identifier(column_name),
                     sql.Literal(f"{masked_schema}.{sequence_name}"),
                 )
             )
@@ -548,19 +560,24 @@ def _create_masked_structure(
         for source_schema, target_schema in SCHEMA_MAPPING.items():
             definition = re.sub(
                 rf"(?i)(REFERENCES\s+){re.escape(source_schema)}\.",
-                rf"\1{target_schema}.", definition,
+                rf"\1{target_schema}.",
+                definition,
             )
         cursor.execute(
             sql.SQL("ALTER TABLE {} ADD CONSTRAINT {} {}").format(
                 _qualified(masked_schema, foreign_key["source_table"]),
-                sql.Identifier(foreign_key["constraint_name"]), sql.SQL(definition),
+                sql.Identifier(foreign_key["constraint_name"]),
+                sql.SQL(definition),
             )
         )
 
 
 def _insert_masked_data(
-    cursor: Any, context: dict[str, Any], columns_by_table: dict[str, list[str]],
-    primary_keys: dict[str, list[str]], masked_data: dict[str, list[tuple[Any, ...]]],
+    cursor: Any,
+    context: dict[str, Any],
+    columns_by_table: dict[str, list[str]],
+    primary_keys: dict[str, list[str]],
+    masked_data: dict[str, list[tuple[Any, ...]]],
     fail_after_tables: int | None = None,
 ) -> None:
     for position, source_table in enumerate(context["load_order"], start=1):
@@ -581,9 +598,11 @@ def _insert_masked_data(
             default = cursor.fetchone()[0]
             if default and default.startswith("nextval("):
                 cursor.execute(
-                    "SELECT setval(pg_get_serial_sequence(%s, %s), COALESCE(max_value, 1), max_value IS NOT NULL) FROM (SELECT max(" +
-                    sql.Identifier(primary_key).as_string(cursor.connection) +
-                    ") AS max_value FROM " + _qualified(masked_schema, table_name).as_string(cursor.connection) + ") AS values_to_set",
+                    "SELECT setval(pg_get_serial_sequence(%s, %s), COALESCE(max_value, 1), max_value IS NOT NULL) FROM (SELECT max("
+                    + sql.Identifier(primary_key).as_string(cursor.connection)
+                    + ") AS max_value FROM "
+                    + _qualified(masked_schema, table_name).as_string(cursor.connection)
+                    + ") AS values_to_set",
                     (f"{masked_schema}.{table_name}", primary_key),
                 )
         if fail_after_tables is not None and position >= fail_after_tables:
@@ -600,14 +619,12 @@ def _column_metadata(cursor: Any, schemas: tuple[str, ...]) -> list[tuple[Any, .
         """,
         (list(schemas),),
     )
-    return cursor.fetchall()
+    return cast(list[tuple[Any, ...]], cursor.fetchall())
 
 
 def _normalized_column_metadata(rows: list[tuple[Any, ...]]) -> list[tuple[Any, ...]]:
     reverse = {masked: source for source, masked in SCHEMA_MAPPING.items()}
-    return sorted(
-        (reverse.get(row[0], row[0]), *row[1:]) for row in rows
-    )
+    return sorted((reverse.get(row[0], row[0]), *row[1:]) for row in rows)
 
 
 def _constraint_signatures(cursor: Any, schemas: tuple[str, ...]) -> list[tuple[Any, ...]]:
@@ -645,12 +662,28 @@ def _constraint_signatures(cursor: Any, schemas: tuple[str, ...]) -> list[tuple[
     reverse = {masked: source for source, masked in SCHEMA_MAPPING.items()}
     signatures = []
     for row in cursor.fetchall():
-        source_schema, table_name, constraint_type, source_columns, target_schema, target_table, target_columns, expression = row
-        signatures.append((
-            reverse.get(source_schema, source_schema), table_name, constraint_type,
-            tuple(source_columns or ()), reverse.get(target_schema, target_schema),
-            target_table, tuple(target_columns or ()), expression,
-        ))
+        (
+            source_schema,
+            table_name,
+            constraint_type,
+            source_columns,
+            target_schema,
+            target_table,
+            target_columns,
+            expression,
+        ) = row
+        signatures.append(
+            (
+                reverse.get(source_schema, source_schema),
+                table_name,
+                constraint_type,
+                tuple(source_columns or ()),
+                reverse.get(target_schema, target_schema),
+                target_table,
+                tuple(target_columns or ()),
+                expression,
+            )
+        )
     return sorted(signatures)
 
 
@@ -665,7 +698,9 @@ def _row_counts(cursor: Any, tables: list[str], *, masked: bool) -> dict[str, in
 
 
 def _fetch_masked_rows(
-    cursor: Any, tables: list[str], columns_by_table: dict[str, list[str]],
+    cursor: Any,
+    tables: list[str],
+    columns_by_table: dict[str, list[str]],
     primary_keys: dict[str, list[str]],
 ) -> dict[str, list[tuple[Any, ...]]]:
     rows = {}
@@ -682,30 +717,38 @@ def _fetch_masked_rows(
 
 
 def _validate_no_cleartext(
-    context: dict[str, Any], columns_by_table: dict[str, list[str]],
-    source_data: dict[str, list[tuple[Any, ...]]], masked_data: dict[str, list[tuple[Any, ...]]],
+    context: dict[str, Any],
+    columns_by_table: dict[str, list[str]],
+    source_data: dict[str, list[tuple[Any, ...]]],
+    masked_data: dict[str, list[tuple[Any, ...]]],
     known_names: list[str],
 ) -> None:
     structured_rules = {
-        "mask_person_name", "mask_email", "mask_phone", "mask_tax_code", "mask_iban",
-        "mask_contact_value", "mask_postal_address", "shift_birth_date",
+        "mask_person_name",
+        "mask_email",
+        "mask_phone",
+        "mask_tax_code",
+        "mask_iban",
+        "mask_contact_value",
+        "mask_postal_address",
+        "shift_birth_date",
     }
     for table in context["source_tables"]:
         for column_index, column_name in enumerate(columns_by_table[table]):
             key = f"{table}.{column_name}"
             rule = context["registry_by_column"][key]["masking_rule"]
-            for source_row, masked_row in zip(source_data[table], masked_data[table]):
+            for source_row, masked_row in zip(source_data[table], masked_data[table], strict=True):
                 source_value, masked_value = source_row[column_index], masked_row[column_index]
                 if rule in structured_rules and source_value not in (None, "") and source_value == masked_value:
-                    raise MaskedValidationError(
-                        f"A structured transformed value remained unchanged in column {key}."
-                    )
+                    raise MaskedValidationError(f"A structured transformed value remained unchanged in column {key}.")
                 if rule == "redact_free_text" and masked_value not in (None, ""):
                     if redact_free_text(str(masked_value), known_names=known_names) != masked_value:
                         raise MaskedValidationError("Detectable PII remains in a masked free-text column.")
                 if rule == "review_before_masking" and context["decision"]["strategy"] == "redact_detected_patterns":
                     if source_value not in (None, "") and source_value == masked_value:
-                        raise MaskedValidationError("The approved ambiguous-column redaction did not alter a non-empty value.")
+                        raise MaskedValidationError(
+                            "The approved ambiguous-column redaction did not alter a non-empty value."
+                        )
 
 
 def _join_match_count(cursor: Any, foreign_key: dict[str, Any], *, masked: bool) -> int:
@@ -713,7 +756,7 @@ def _join_match_count(cursor: Any, foreign_key: dict[str, Any], *, masked: bool)
     target_schema = SCHEMA_MAPPING[foreign_key["target_schema"]] if masked else foreign_key["target_schema"]
     conditions = [
         sql.SQL("child.{} = parent.{}").format(sql.Identifier(source), sql.Identifier(target))
-        for source, target in zip(foreign_key["source_columns"], foreign_key["target_columns"])
+        for source, target in zip(foreign_key["source_columns"], foreign_key["target_columns"], strict=True)
     ]
     cursor.execute(
         sql.SQL("SELECT count(*) FROM {} AS child JOIN {} AS parent ON {}").format(
@@ -722,14 +765,15 @@ def _join_match_count(cursor: Any, foreign_key: dict[str, Any], *, masked: bool)
             sql.SQL(" AND ").join(conditions),
         )
     )
-    return cursor.fetchone()[0]
+    result = cursor.fetchone()
+    if result is None:
+        raise MaskedValidationError("A relationship validation query returned no aggregate result.")
+    return int(result[0])
 
 
 def _validate_relationship_matches(cursor: Any, context: dict[str, Any]) -> None:
     for foreign_key in context["foreign_keys"]:
-        if _join_match_count(cursor, foreign_key, masked=False) != _join_match_count(
-            cursor, foreign_key, masked=True
-        ):
+        if _join_match_count(cursor, foreign_key, masked=False) != _join_match_count(cursor, foreign_key, masked=True):
             raise MaskedValidationError("A declared relationship changed its join count.")
     logical_queries = (
         (
@@ -780,8 +824,11 @@ def _validate_required_consistency(cursor: Any) -> None:
 
 
 def validate_masked_database(
-    cursor: Any, context: dict[str, Any], columns_by_table: dict[str, list[str]],
-    primary_keys: dict[str, list[str]], source_data: dict[str, list[tuple[Any, ...]]] | None = None,
+    cursor: Any,
+    context: dict[str, Any],
+    columns_by_table: dict[str, list[str]],
+    primary_keys: dict[str, list[str]],
+    source_data: dict[str, list[tuple[Any, ...]]] | None = None,
     transform_summary: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     cursor.execute(
@@ -799,7 +846,9 @@ def validate_masked_database(
     masked_counts = _row_counts(cursor, context["source_tables"], masked=True)
     if source_counts != masked_counts:
         raise MaskedValidationError("Source and masked row counts differ.")
-    if _normalized_column_metadata(_column_metadata(cursor, SOURCE_SCHEMAS)) != _normalized_column_metadata(_column_metadata(cursor, MASKED_SCHEMAS)):
+    if _normalized_column_metadata(_column_metadata(cursor, SOURCE_SCHEMAS)) != _normalized_column_metadata(
+        _column_metadata(cursor, MASKED_SCHEMAS)
+    ):
         raise MaskedValidationError("Masked column metadata differs from source metadata.")
     if _constraint_signatures(cursor, SOURCE_SCHEMAS) != _constraint_signatures(cursor, MASKED_SCHEMAS):
         raise MaskedValidationError("Masked PK, FK, UNIQUE or CHECK constraints differ from source constraints.")
@@ -820,12 +869,13 @@ def validate_masked_database(
     _validate_relationship_matches(cursor, context)
     _validate_required_consistency(cursor)
 
-    masked_rows = _fetch_masked_rows(
-        cursor, context["source_tables"], columns_by_table, primary_keys
-    )
+    masked_rows = _fetch_masked_rows(cursor, context["source_tables"], columns_by_table, primary_keys)
     if source_data is not None and transform_summary is not None:
         _validate_no_cleartext(
-            context, columns_by_table, source_data, masked_rows,
+            context,
+            columns_by_table,
+            source_data,
+            masked_rows,
             transform_summary["known_names"],
         )
     table_checksums = {}
@@ -835,21 +885,30 @@ def validate_masked_database(
             SCHEMA_MAPPING[source_schema], table_name, columns_by_table[table], masked_rows[table]
         )
     return {
-        "source_counts": source_counts, "masked_counts": masked_counts,
+        "source_counts": source_counts,
+        "masked_counts": masked_counts,
         "table_checksums": dict(sorted(table_checksums.items())),
         "masked_rows": masked_rows,
         "validations": [
-            "20_masked_tables", "row_counts", "column_names_order_types_nullability",
-            "primary_keys", "foreign_keys", "unique_constraints", "check_constraints",
-            "declared_join_counts", "logical_relationship_match_counts",
-            "logical_relationships_not_promoted", "required_consistency_groups",
+            "20_masked_tables",
+            "row_counts",
+            "column_names_order_types_nullability",
+            "primary_keys",
+            "foreign_keys",
+            "unique_constraints",
+            "check_constraints",
+            "declared_join_counts",
+            "logical_relationship_match_counts",
+            "logical_relationships_not_promoted",
+            "required_consistency_groups",
             "no_detectable_cleartext_pii",
         ],
     }
 
 
 def _source_checksums(
-    context: dict[str, Any], columns_by_table: dict[str, list[str]],
+    context: dict[str, Any],
+    columns_by_table: dict[str, list[str]],
     source_data: dict[str, list[tuple[Any, ...]]],
 ) -> dict[str, str]:
     return {
@@ -859,7 +918,8 @@ def _source_checksums(
 
 
 def _build_manifest(
-    context: dict[str, Any], validation: dict[str, Any],
+    context: dict[str, Any],
+    validation: dict[str, Any],
     transform_summary: dict[str, Any],
 ) -> dict[str, Any]:
     collision_records = transform_summary["collision_details"]
@@ -888,9 +948,8 @@ def _build_manifest(
             "review_status": context["decision"]["review_status"],
             "residual_risk_documented": bool(context["decision"].get("residual_risk")),
         },
-        "validations": validation["validations"] + [
-            "source_schemas_unchanged", "manifest_contains_no_values_or_secret"
-        ],
+        "validations": validation["validations"]
+        + ["source_schemas_unchanged", "manifest_contains_no_values_or_secret"],
         "table_checksums": validation["table_checksums"],
         "checksum_canonicalization": {
             "algorithm": "SHA-256",
@@ -907,45 +966,46 @@ def _build_manifest(
 def dry_run_plan() -> dict[str, Any]:
     with get_connection() as connection, connection.cursor() as cursor:
         context = validate_preconditions(cursor)
-        columns_by_table, _, source_data = _fetch_all_source_data(
-            cursor, context["source_tables"]
-        )
-        _, _, collision_details = _prepare_batch_mappings(
-            context, columns_by_table, source_data
-        )
+        columns_by_table, _, source_data = _fetch_all_source_data(cursor, context["source_tables"])
+        _, _, collision_details = _prepare_batch_mappings(context, columns_by_table, source_data)
     return {
-        "tables": len(context["source_tables"]), "load_order": context["load_order"],
+        "tables": len(context["source_tables"]),
+        "load_order": context["load_order"],
         "ambiguous_strategy": context["decision"]["strategy"],
-        "batch_sets": len(collision_details), "writes_performed": False,
+        "batch_sets": len(collision_details),
+        "writes_performed": False,
     }
 
 
 def apply_masking(
-    *, manifest_path: Path = MANIFEST_PATH,
+    *,
+    manifest_path: Path = MANIFEST_PATH,
     fail_after_tables: int | None = None,
 ) -> dict[str, Any]:
     with get_connection() as connection:
         with connection.cursor() as cursor:
             context = validate_preconditions(cursor)
-            columns_by_table, primary_keys, source_data = _fetch_all_source_data(
-                cursor, context["source_tables"]
-            )
+            columns_by_table, primary_keys, source_data = _fetch_all_source_data(cursor, context["source_tables"])
             source_before = _source_checksums(context, columns_by_table, source_data)
-            masked_data, transform_summary = _transform_data(
-                context, columns_by_table, source_data
-            )
+            masked_data, transform_summary = _transform_data(context, columns_by_table, source_data)
             _create_masked_structure(cursor, context, columns_by_table)
             _insert_masked_data(
-                cursor, context, columns_by_table, primary_keys, masked_data,
+                cursor,
+                context,
+                columns_by_table,
+                primary_keys,
+                masked_data,
                 fail_after_tables=fail_after_tables,
             )
             validation = validate_masked_database(
-                cursor, context, columns_by_table, primary_keys,
-                source_data=source_data, transform_summary=transform_summary,
+                cursor,
+                context,
+                columns_by_table,
+                primary_keys,
+                source_data=source_data,
+                transform_summary=transform_summary,
             )
-            _, _, source_after_data = _fetch_all_source_data(
-                cursor, context["source_tables"]
-            )
+            _, _, source_after_data = _fetch_all_source_data(cursor, context["source_tables"])
             if source_before != _source_checksums(context, columns_by_table, source_after_data):
                 raise MaskedValidationError("Source schemas changed during masking.")
             manifest = _build_manifest(context, validation, transform_summary)
@@ -956,13 +1016,15 @@ def apply_masking(
 def validate_only() -> dict[str, Any]:
     with get_connection() as connection, connection.cursor() as cursor:
         context = validate_preconditions(cursor)
-        columns_by_table, primary_keys, source_data = _fetch_all_source_data(
-            cursor, context["source_tables"]
-        )
+        columns_by_table, primary_keys, source_data = _fetch_all_source_data(cursor, context["source_tables"])
         names = _known_names(context["records"], columns_by_table, source_data)
         return validate_masked_database(
-            cursor, context, columns_by_table, primary_keys,
-            source_data=source_data, transform_summary={"known_names": names},
+            cursor,
+            context,
+            columns_by_table,
+            primary_keys,
+            source_data=source_data,
+            transform_summary={"known_names": names},
         )
 
 
@@ -970,7 +1032,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Transactional masked database pipeline")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--dry-run", action="store_true", help="Validate and calculate the plan without writes")
-    mode.add_argument("--validate-only", action="store_true", help="Validate an existing masked database without writes")
+    mode.add_argument(
+        "--validate-only", action="store_true", help="Validate an existing masked database without writes"
+    )
     args = parser.parse_args()
     if args.dry_run:
         plan = dry_run_plan()

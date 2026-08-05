@@ -81,9 +81,7 @@ def test_secret_is_required_and_weak_secret_is_rejected_without_disclosure(monke
     assert weak not in str(error.value)
 
 
-def test_same_secret_is_deterministic_and_different_secret_changes_output(
-    secret: str, other_secret: str
-) -> None:
+def test_same_secret_is_deterministic_and_different_secret_changes_output(secret: str, other_secret: str) -> None:
     first = mask_email("utente@example.test", secret=secret, namespace="email.customer.v1")
     second = mask_email("utente@example.test", secret=secret, namespace="email.customer.v1")
     changed = mask_email("utente@example.test", secret=other_secret, namespace="email.customer.v1")
@@ -130,9 +128,7 @@ def test_phone_output_is_stable_and_synthetic(secret: str) -> None:
     assert first is not None and first.startswith("+39 000 ") and len(first.split()[-1]) == 7
 
 
-def test_tax_code_output_is_valid_and_consistent_across_trap_columns(
-    secret: str, tax_code: str
-) -> None:
+def test_tax_code_output_is_valid_and_consistent_across_trap_columns(secret: str, tax_code: str) -> None:
     customer_namespace = "tax_code.customer.v1"
     crm_value = mask_tax_code(tax_code, secret=secret, namespace=customer_namespace)
     billing_value = mask_tax_code(tax_code.lower(), secret=secret, namespace=customer_namespace)
@@ -143,9 +139,7 @@ def test_tax_code_output_is_valid_and_consistent_across_trap_columns(
     assert employee_value != crm_value
 
 
-def test_iban_output_is_valid_non_routable_and_consistent(
-    secret: str, iban: str
-) -> None:
+def test_iban_output_is_valid_non_routable_and_consistent(secret: str, iban: str) -> None:
     first = mask_iban(iban, secret=secret, namespace="iban.employee.v1")
     second = mask_iban(" ".join((iban[:8], iban[8:])), secret=secret, namespace="iban.employee.v1")
     assert first == second
@@ -154,9 +148,7 @@ def test_iban_output_is_valid_non_routable_and_consistent(
     assert is_valid_italian_iban(first)
 
 
-def test_person_name_preserves_token_count_without_global_state(
-    secret: str, other_secret: str
-) -> None:
+def test_person_name_preserves_token_count_without_global_state(secret: str, other_secret: str) -> None:
     first = mask_person_name("Persona  Sintetica", secret=secret, namespace="name.customer.v1")
     repeated = mask_person_name("persona sintetica", secret=secret, namespace="name.customer.v1")
     changed_secret = mask_person_name("Persona Sintetica", secret=other_secret, namespace="name.customer.v1")
@@ -182,15 +174,15 @@ def test_birth_date_shift_is_bounded_deterministic_and_not_future(secret: str) -
 def test_free_text_redaction_handles_multiple_patterns_and_known_names(
     tax_code: str, iban: str, caplog: pytest.LogCaptureFixture
 ) -> None:
-    text = (
-        f"Persona Sintetica: utente@example.test, +39 000 1234567, "
-        f"codice {tax_code}, conto {iban}."
-    )
+    text = f"Persona Sintetica: utente@example.test, +39 000 1234567, codice {tax_code}, conto {iban}."
     redacted = redact_free_text(text, known_names=["Persona Sintetica"])
     assert redacted is not None
     for marker in (
-        "[REDACTED_EMAIL]", "[REDACTED_PHONE]", "[REDACTED_TAX_CODE]",
-        "[REDACTED_IBAN]", "[REDACTED_NAME]",
+        "[REDACTED_EMAIL]",
+        "[REDACTED_PHONE]",
+        "[REDACTED_TAX_CODE]",
+        "[REDACTED_IBAN]",
+        "[REDACTED_NAME]",
     ):
         assert marker in redacted
     assert "codice" in redacted and "conto" in redacted
@@ -198,15 +190,9 @@ def test_free_text_redaction_handles_multiple_patterns_and_known_names(
 
 
 def test_contact_value_dispatch_and_postal_address(secret: str) -> None:
-    email = mask_contact_value(
-        "utente@example.test", "email", secret=secret, namespace="contact.customer.v1"
-    )
-    phone = mask_contact_value(
-        "+39 000 1234567", "telefono", secret=secret, namespace="contact.customer.v1"
-    )
-    address = mask_postal_address(
-        "Via Sintetica 1", secret=secret, namespace="address.customer.v1"
-    )
+    email = mask_contact_value("utente@example.test", "email", secret=secret, namespace="contact.customer.v1")
+    phone = mask_contact_value("+39 000 1234567", "telefono", secret=secret, namespace="contact.customer.v1")
+    address = mask_postal_address("Via Sintetica 1", secret=secret, namespace="address.customer.v1")
     assert email is not None and email.endswith("@example.test")
     assert phone is not None and phone.startswith("+39 000 ")
     assert address is not None and address.startswith("Indirizzo sintetico ")
@@ -218,12 +204,8 @@ def test_collision_resolution_is_deterministic_and_order_independent() -> None:
     def candidate(value: str, counter: int) -> str:
         return "same" if counter == 0 else f"{value}-{counter}"
 
-    first = resolve_collisions(
-        ["Beta", "alpha", "ALPHA"], normalizer=str.lower, candidate_generator=candidate
-    )
-    second = resolve_collisions(
-        ["ALPHA", "alpha", "Beta"], normalizer=str.lower, candidate_generator=candidate
-    )
+    first = resolve_collisions(["Beta", "alpha", "ALPHA"], normalizer=str.lower, candidate_generator=candidate)
+    second = resolve_collisions(["ALPHA", "alpha", "Beta"], normalizer=str.lower, candidate_generator=candidate)
     assert first == second
     assert first.statistics.values_processed == 2
     assert first.statistics.collisions_detected == 1
@@ -234,17 +216,17 @@ def test_collision_resolution_is_deterministic_and_order_independent() -> None:
 def test_unresolvable_collision_raises_controlled_error() -> None:
     with pytest.raises(UnresolvableCollisionError):
         resolve_collisions(
-            ["alpha", "beta"], normalizer=str.lower,
-            candidate_generator=lambda _value, _counter: "same", max_attempts=2,
+            ["alpha", "beta"],
+            normalizer=str.lower,
+            candidate_generator=lambda _value, _counter: "same",
+            max_attempts=2,
         )
 
 
 def test_preservation_and_review_controls() -> None:
     approved = {"crm.clienti.cliente_id"}
     value = 1001
-    assert preserve_technical_key(
-        value, column="crm.clienti.cliente_id", approved_columns=approved
-    ) == value
+    assert preserve_technical_key(value, column="crm.clienti.cliente_id", approved_columns=approved) == value
     assert preserve_value(value) == value
     with pytest.raises(InvalidConfigurationError):
         preserve_technical_key(value, column="crm.clienti.nome", approved_columns=approved)
@@ -286,7 +268,9 @@ def test_documentation_is_regenerable_and_deterministic(tmp_path: Path) -> None:
 
 def test_no_secret_or_persistent_mapping_in_versioned_files(secret: str) -> None:
     paths = (
-        MASKING_RULES_PATH, CONSISTENCY_GROUPS_PATH, DOCUMENTATION_PATH,
+        MASKING_RULES_PATH,
+        CONSISTENCY_GROUPS_PATH,
+        DOCUMENTATION_PATH,
         Path("src/masking.py"),
     )
     content = "\n".join(path.read_text(encoding="utf-8") for path in paths)

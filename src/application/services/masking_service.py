@@ -6,7 +6,8 @@ from typing import Any
 
 class MaskingService:
     def __init__(
-        self, apply_masking: Callable[[], dict[str, Any]],
+        self,
+        apply_masking: Callable[[], dict[str, Any]],
         dry_run: Callable[[], dict[str, Any]],
         validate_only: Callable[[], dict[str, Any]],
     ) -> None:

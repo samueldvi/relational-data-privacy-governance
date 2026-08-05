@@ -1,0 +1,1464 @@
+version: 1
+schemas:
+- name: billing
+  tables:
+  - name: coordinate_bancarie
+    columns:
+    - name: coordinata_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: cliente_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: iban
+      ordinal_position: 3
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_iban
+      consistency_group: customer_iban
+    - name: intestatario
+      ordinal_position: 4
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_person_name
+      consistency_group: null
+    - name: banca
+      ordinal_position: 5
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    constraints:
+    - name: coordinate_bancarie_pkey
+      kind: primary_key
+      columns:
+      - coordinata_id
+      definition: PRIMARY KEY (coordinata_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: coordinate_bancarie_iban_key
+      kind: unique
+      columns:
+      - iban
+      definition: UNIQUE (iban)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: fatture
+    columns:
+    - name: fattura_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: cliente_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: numero_fattura
+      ordinal_position: 3
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: data_emissione
+      ordinal_position: 4
+      data_type: date
+      udt_name: date
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: importo
+      ordinal_position: 5
+      data_type: numeric
+      udt_name: numeric
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: iva
+      ordinal_position: 6
+      data_type: numeric
+      udt_name: numeric
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: stato
+      ordinal_position: 7
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    constraints:
+    - name: fatture_importo_check
+      kind: check
+      columns:
+      - importo
+      definition: CHECK (importo >= 0::numeric)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: fatture_iva_check
+      kind: check
+      columns:
+      - iva
+      definition: CHECK (iva >= 0::numeric)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: fatture_pkey
+      kind: primary_key
+      columns:
+      - fattura_id
+      definition: PRIMARY KEY (fattura_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: fatture_numero_fattura_key
+      kind: unique
+      columns:
+      - numero_fattura
+      definition: UNIQUE (numero_fattura)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: pagamenti
+    columns:
+    - name: pagamento_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: fattura_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: data_pagamento
+      ordinal_position: 3
+      data_type: date
+      udt_name: date
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: importo_pagato
+      ordinal_position: 4
+      data_type: numeric
+      udt_name: numeric
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: metodo
+      ordinal_position: 5
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: riferimento_bancario
+      ordinal_position: 6
+      data_type: character varying
+      udt_name: varchar
+      nullable: true
+      classification: Dubbio
+      masking_rule: review_before_masking
+      consistency_group: null
+    - name: rif_esterno
+      ordinal_position: 7
+      data_type: character varying
+      udt_name: varchar
+      nullable: true
+      classification: PII-nascosta
+      masking_rule: mask_email
+      consistency_group: customer_email
+    constraints:
+    - name: pagamenti_importo_pagato_check
+      kind: check
+      columns:
+      - importo_pagato
+      definition: CHECK (importo_pagato >= 0::numeric)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: fk_pagamenti_fattura
+      kind: foreign_key
+      columns:
+      - fattura_id
+      definition: FOREIGN KEY (fattura_id) REFERENCES billing.fatture(fattura_id)
+      target_schema: billing
+      target_table: fatture
+      target_columns:
+      - fattura_id
+    - name: pagamenti_pkey
+      kind: primary_key
+      columns:
+      - pagamento_id
+      definition: PRIMARY KEY (pagamento_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: report_mensili
+    columns:
+    - name: report_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: mese
+      ordinal_position: 2
+      data_type: smallint
+      udt_name: int2
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: anno
+      ordinal_position: 3
+      data_type: smallint
+      udt_name: int2
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: totale_fatturato
+      ordinal_position: 4
+      data_type: numeric
+      udt_name: numeric
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: totale_incassato
+      ordinal_position: 5
+      data_type: numeric
+      udt_name: numeric
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    constraints:
+    - name: report_mensili_anno_check
+      kind: check
+      columns:
+      - anno
+      definition: CHECK (anno >= 2000 AND anno <= 2200)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: report_mensili_mese_check
+      kind: check
+      columns:
+      - mese
+      definition: CHECK (mese >= 1 AND mese <= 12)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: report_mensili_totale_fatturato_check
+      kind: check
+      columns:
+      - totale_fatturato
+      definition: CHECK (totale_fatturato >= 0::numeric)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: report_mensili_totale_incassato_check
+      kind: check
+      columns:
+      - totale_incassato
+      definition: CHECK (totale_incassato >= 0::numeric)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: report_mensili_pkey
+      kind: primary_key
+      columns:
+      - report_id
+      definition: PRIMARY KEY (report_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: uq_report_mensili_periodo
+      kind: unique
+      columns:
+      - mese
+      - anno
+      definition: UNIQUE (mese, anno)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: sconti
+    columns:
+    - name: sconto_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: cliente_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: codice_sconto
+      ordinal_position: 3
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: percentuale
+      ordinal_position: 4
+      data_type: numeric
+      udt_name: numeric
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: data_scadenza
+      ordinal_position: 5
+      data_type: date
+      udt_name: date
+      nullable: true
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: cod_rif
+      ordinal_position: 6
+      data_type: character varying
+      udt_name: varchar
+      nullable: true
+      classification: PII-nascosta
+      masking_rule: mask_tax_code
+      consistency_group: customer_tax_code
+    constraints:
+    - name: sconti_percentuale_check
+      kind: check
+      columns:
+      - percentuale
+      definition: CHECK (percentuale >= 0::numeric AND percentuale <= 100::numeric)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: sconti_pkey
+      kind: primary_key
+      columns:
+      - sconto_id
+      definition: PRIMARY KEY (sconto_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: sconti_codice_sconto_key
+      kind: unique
+      columns:
+      - codice_sconto
+      definition: UNIQUE (codice_sconto)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: solleciti
+    columns:
+    - name: sollecito_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: fattura_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: data_invio
+      ordinal_position: 3
+      data_type: date
+      udt_name: date
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: destinatario_email
+      ordinal_position: 4
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_email
+      consistency_group: customer_email
+    - name: testo_sollecito
+      ordinal_position: 5
+      data_type: text
+      udt_name: text
+      nullable: false
+      classification: PII-nascosta
+      masking_rule: redact_free_text
+      consistency_group: null
+    constraints:
+    - name: fk_solleciti_fattura
+      kind: foreign_key
+      columns:
+      - fattura_id
+      definition: FOREIGN KEY (fattura_id) REFERENCES billing.fatture(fattura_id)
+      target_schema: billing
+      target_table: fatture
+      target_columns:
+      - fattura_id
+    - name: solleciti_pkey
+      kind: primary_key
+      columns:
+      - sollecito_id
+      definition: PRIMARY KEY (sollecito_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+- name: crm
+  tables:
+  - name: campagne
+    columns:
+    - name: campagna_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: nome_campagna
+      ordinal_position: 2
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: email_template
+      ordinal_position: 3
+      data_type: text
+      udt_name: text
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: data_inizio
+      ordinal_position: 4
+      data_type: date
+      udt_name: date
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    constraints:
+    - name: campagne_pkey
+      kind: primary_key
+      columns:
+      - campagna_id
+      definition: PRIMARY KEY (campagna_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: clienti
+    columns:
+    - name: cliente_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: nome
+      ordinal_position: 2
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_person_name
+      consistency_group: null
+    - name: cognome
+      ordinal_position: 3
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_person_name
+      consistency_group: null
+    - name: email
+      ordinal_position: 4
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_email
+      consistency_group: customer_email
+    - name: telefono
+      ordinal_position: 5
+      data_type: character varying
+      udt_name: varchar
+      nullable: true
+      classification: PII-diretta
+      masking_rule: mask_phone
+      consistency_group: customer_phone
+    - name: cod_fisc
+      ordinal_position: 6
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_tax_code
+      consistency_group: customer_tax_code
+    - name: data_nascita
+      ordinal_position: 7
+      data_type: date
+      udt_name: date
+      nullable: true
+      classification: PII-indiretta
+      masking_rule: shift_birth_date
+      consistency_group: null
+    - name: segmento
+      ordinal_position: 8
+      data_type: character varying
+      udt_name: varchar
+      nullable: true
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: data_registrazione
+      ordinal_position: 9
+      data_type: timestamp without time zone
+      udt_name: timestamp
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    constraints:
+    - name: clienti_pkey
+      kind: primary_key
+      columns:
+      - cliente_id
+      definition: PRIMARY KEY (cliente_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: clienti_cod_fisc_key
+      kind: unique
+      columns:
+      - cod_fisc
+      definition: UNIQUE (cod_fisc)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: consensi
+    columns:
+    - name: consenso_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: cliente_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: tipo_consenso
+      ordinal_position: 3
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: data_consenso
+      ordinal_position: 4
+      data_type: timestamp without time zone
+      udt_name: timestamp
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: revocato
+      ordinal_position: 5
+      data_type: boolean
+      udt_name: bool
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    constraints:
+    - name: fk_consensi_cliente
+      kind: foreign_key
+      columns:
+      - cliente_id
+      definition: FOREIGN KEY (cliente_id) REFERENCES crm.clienti(cliente_id)
+      target_schema: crm
+      target_table: clienti
+      target_columns:
+      - cliente_id
+    - name: consensi_pkey
+      kind: primary_key
+      columns:
+      - consenso_id
+      definition: PRIMARY KEY (consenso_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: contatti_extra
+    columns:
+    - name: contatto_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: cliente_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: tipo
+      ordinal_position: 3
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: valore
+      ordinal_position: 4
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_contact_value
+      consistency_group: null
+    constraints:
+    - name: fk_contatti_extra_cliente
+      kind: foreign_key
+      columns:
+      - cliente_id
+      definition: FOREIGN KEY (cliente_id) REFERENCES crm.clienti(cliente_id)
+      target_schema: crm
+      target_table: clienti
+      target_columns:
+      - cliente_id
+    - name: contatti_extra_pkey
+      kind: primary_key
+      columns:
+      - contatto_id
+      definition: PRIMARY KEY (contatto_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: indirizzi
+    columns:
+    - name: indirizzo_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: cliente_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: via
+      ordinal_position: 3
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_postal_address
+      consistency_group: null
+    - name: cap
+      ordinal_position: 4
+      data_type: character varying
+      udt_name: varchar
+      nullable: true
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: citta
+      ordinal_position: 5
+      data_type: character varying
+      udt_name: varchar
+      nullable: true
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: provincia
+      ordinal_position: 6
+      data_type: character varying
+      udt_name: varchar
+      nullable: true
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    constraints:
+    - name: fk_indirizzi_cliente
+      kind: foreign_key
+      columns:
+      - cliente_id
+      definition: FOREIGN KEY (cliente_id) REFERENCES crm.clienti(cliente_id)
+      target_schema: crm
+      target_table: clienti
+      target_columns:
+      - cliente_id
+    - name: indirizzi_pkey
+      kind: primary_key
+      columns:
+      - indirizzo_id
+      definition: PRIMARY KEY (indirizzo_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: note_cliente
+    columns:
+    - name: nota_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: cliente_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: testo
+      ordinal_position: 3
+      data_type: text
+      udt_name: text
+      nullable: false
+      classification: PII-nascosta
+      masking_rule: redact_free_text
+      consistency_group: null
+    - name: data_nota
+      ordinal_position: 4
+      data_type: timestamp without time zone
+      udt_name: timestamp
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    constraints:
+    - name: fk_note_cliente
+      kind: foreign_key
+      columns:
+      - cliente_id
+      definition: FOREIGN KEY (cliente_id) REFERENCES crm.clienti(cliente_id)
+      target_schema: crm
+      target_table: clienti
+      target_columns:
+      - cliente_id
+    - name: note_cliente_pkey
+      kind: primary_key
+      columns:
+      - nota_id
+      definition: PRIMARY KEY (nota_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: ordini
+    columns:
+    - name: ordine_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: cliente_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: data_ordine
+      ordinal_position: 3
+      data_type: date
+      udt_name: date
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: importo
+      ordinal_position: 4
+      data_type: numeric
+      udt_name: numeric
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: stato
+      ordinal_position: 5
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    constraints:
+    - name: fk_ordini_cliente
+      kind: foreign_key
+      columns:
+      - cliente_id
+      definition: FOREIGN KEY (cliente_id) REFERENCES crm.clienti(cliente_id)
+      target_schema: crm
+      target_table: clienti
+      target_columns:
+      - cliente_id
+    - name: ordini_pkey
+      kind: primary_key
+      columns:
+      - ordine_id
+      definition: PRIMARY KEY (ordine_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: referenti_commerciali
+    columns:
+    - name: referente_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: nome_ref
+      ordinal_position: 2
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_person_name
+      consistency_group: null
+    - name: email_ref
+      ordinal_position: 3
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_email
+      consistency_group: commercial_contact_email
+    - name: telefono_ref
+      ordinal_position: 4
+      data_type: character varying
+      udt_name: varchar
+      nullable: true
+      classification: PII-diretta
+      masking_rule: mask_phone
+      consistency_group: commercial_contact_phone
+    constraints:
+    - name: referenti_commerciali_pkey
+      kind: primary_key
+      columns:
+      - referente_id
+      definition: PRIMARY KEY (referente_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+- name: hr
+  tables:
+  - name: buste_paga
+    columns:
+    - name: busta_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: dipendente_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: mese
+      ordinal_position: 3
+      data_type: smallint
+      udt_name: int2
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: anno
+      ordinal_position: 4
+      data_type: smallint
+      udt_name: int2
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: lordo
+      ordinal_position: 5
+      data_type: numeric
+      udt_name: numeric
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: netto
+      ordinal_position: 6
+      data_type: numeric
+      udt_name: numeric
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: iban_accredito
+      ordinal_position: 7
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_iban
+      consistency_group: employee_iban
+    constraints:
+    - name: buste_paga_anno_check
+      kind: check
+      columns:
+      - anno
+      definition: CHECK (anno >= 2000 AND anno <= 2200)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: buste_paga_lordo_check
+      kind: check
+      columns:
+      - lordo
+      definition: CHECK (lordo >= 0::numeric)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: buste_paga_mese_check
+      kind: check
+      columns:
+      - mese
+      definition: CHECK (mese >= 1 AND mese <= 12)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: buste_paga_netto_check
+      kind: check
+      columns:
+      - netto
+      definition: CHECK (netto >= 0::numeric)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: fk_buste_paga_dipendente
+      kind: foreign_key
+      columns:
+      - dipendente_id
+      definition: FOREIGN KEY (dipendente_id) REFERENCES hr.dipendenti(dipendente_id)
+      target_schema: hr
+      target_table: dipendenti
+      target_columns:
+      - dipendente_id
+    - name: buste_paga_pkey
+      kind: primary_key
+      columns:
+      - busta_id
+      definition: PRIMARY KEY (busta_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: uq_buste_paga_periodo
+      kind: unique
+      columns:
+      - dipendente_id
+      - mese
+      - anno
+      definition: UNIQUE (dipendente_id, mese, anno)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: dipendenti
+    columns:
+    - name: dipendente_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: nome
+      ordinal_position: 2
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_person_name
+      consistency_group: null
+    - name: cognome
+      ordinal_position: 3
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_person_name
+      consistency_group: null
+    - name: cod_fisc
+      ordinal_position: 4
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_tax_code
+      consistency_group: employee_tax_code
+    - name: email_aziendale
+      ordinal_position: 5
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_email
+      consistency_group: employee_email
+    - name: iban
+      ordinal_position: 6
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_iban
+      consistency_group: employee_iban
+    - name: data_assunzione
+      ordinal_position: 7
+      data_type: date
+      udt_name: date
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: reparto_id
+      ordinal_position: 8
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    constraints:
+    - name: fk_dipendenti_reparto
+      kind: foreign_key
+      columns:
+      - reparto_id
+      definition: FOREIGN KEY (reparto_id) REFERENCES hr.reparti(reparto_id)
+      target_schema: hr
+      target_table: reparti
+      target_columns:
+      - reparto_id
+    - name: dipendenti_pkey
+      kind: primary_key
+      columns:
+      - dipendente_id
+      definition: PRIMARY KEY (dipendente_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: dipendenti_cod_fisc_key
+      kind: unique
+      columns:
+      - cod_fisc
+      definition: UNIQUE (cod_fisc)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: dipendenti_email_aziendale_key
+      kind: unique
+      columns:
+      - email_aziendale
+      definition: UNIQUE (email_aziendale)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: formazione
+    columns:
+    - name: corso_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: titolo
+      ordinal_position: 2
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: docente
+      ordinal_position: 3
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-diretta
+      masking_rule: mask_person_name
+      consistency_group: null
+    - name: data_corso
+      ordinal_position: 4
+      data_type: date
+      udt_name: date
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    constraints:
+    - name: formazione_pkey
+      kind: primary_key
+      columns:
+      - corso_id
+      definition: PRIMARY KEY (corso_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: presenze
+    columns:
+    - name: presenza_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: dipendente_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: data
+      ordinal_position: 3
+      data_type: date
+      udt_name: date
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: ore
+      ordinal_position: 4
+      data_type: numeric
+      udt_name: numeric
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: tipo
+      ordinal_position: 5
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    constraints:
+    - name: presenze_ore_check
+      kind: check
+      columns:
+      - ore
+      definition: CHECK (ore >= 0::numeric AND ore <= 24::numeric)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: fk_presenze_dipendente
+      kind: foreign_key
+      columns:
+      - dipendente_id
+      definition: FOREIGN KEY (dipendente_id) REFERENCES hr.dipendenti(dipendente_id)
+      target_schema: hr
+      target_table: dipendenti
+      target_columns:
+      - dipendente_id
+    - name: presenze_pkey
+      kind: primary_key
+      columns:
+      - presenza_id
+      definition: PRIMARY KEY (presenza_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: uq_presenze_giorno
+      kind: unique
+      columns:
+      - dipendente_id
+      - data
+      definition: UNIQUE (dipendente_id, data)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: reparti
+    columns:
+    - name: reparto_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: nome_reparto
+      ordinal_position: 2
+      data_type: character varying
+      udt_name: varchar
+      nullable: false
+      classification: Non-PII
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: responsabile_id
+      ordinal_position: 3
+      data_type: bigint
+      udt_name: int8
+      nullable: true
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    constraints:
+    - name: reparti_pkey
+      kind: primary_key
+      columns:
+      - reparto_id
+      definition: PRIMARY KEY (reparto_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: reparti_nome_reparto_key
+      kind: unique
+      columns:
+      - nome_reparto
+      definition: UNIQUE (nome_reparto)
+      target_schema: null
+      target_table: null
+      target_columns: []
+  - name: valutazioni
+    columns:
+    - name: valutazione_id
+      ordinal_position: 1
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: dipendente_id
+      ordinal_position: 2
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: valutatore_id
+      ordinal_position: 3
+      data_type: bigint
+      udt_name: int8
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_technical_key
+      consistency_group: null
+    - name: anno
+      ordinal_position: 4
+      data_type: smallint
+      udt_name: int2
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: punteggio
+      ordinal_position: 5
+      data_type: numeric
+      udt_name: numeric
+      nullable: false
+      classification: PII-indiretta
+      masking_rule: preserve_value
+      consistency_group: null
+    - name: commento
+      ordinal_position: 6
+      data_type: text
+      udt_name: text
+      nullable: true
+      classification: PII-nascosta
+      masking_rule: redact_free_text
+      consistency_group: null
+    constraints:
+    - name: valutazioni_anno_check
+      kind: check
+      columns:
+      - anno
+      definition: CHECK (anno >= 2000 AND anno <= 2200)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: valutazioni_punteggio_check
+      kind: check
+      columns:
+      - punteggio
+      definition: CHECK (punteggio >= 0::numeric AND punteggio <= 10::numeric)
+      target_schema: null
+      target_table: null
+      target_columns: []
+    - name: fk_valutazioni_dipendente
+      kind: foreign_key
+      columns:
+      - dipendente_id
+      definition: FOREIGN KEY (dipendente_id) REFERENCES hr.dipendenti(dipendente_id)
+      target_schema: hr
+      target_table: dipendenti
+      target_columns:
+      - dipendente_id
+    - name: fk_valutazioni_valutatore
+      kind: foreign_key
+      columns:
+      - valutatore_id
+      definition: FOREIGN KEY (valutatore_id) REFERENCES hr.dipendenti(dipendente_id)
+      target_schema: hr
+      target_table: dipendenti
+      target_columns:
+      - dipendente_id
+    - name: valutazioni_pkey
+      kind: primary_key
+      columns:
+      - valutazione_id
+      definition: PRIMARY KEY (valutazione_id)
+      target_schema: null
+      target_table: null
+      target_columns: []
+logical_relationships:
+- source: billing.fatture.cliente_id
+  target: crm.clienti.cliente_id
+  status: logical_confirmed
+- source: hr.reparti.responsabile_id
+  target: hr.dipendenti.dipendente_id
+  status: logical_confirmed
+masking_rules:
+- mask_contact_value
+- mask_email
+- mask_iban
+- mask_person_name
+- mask_phone
+- mask_postal_address
+- mask_tax_code
+- preserve_technical_key
+- preserve_value
+- redact_free_text
+- review_before_masking
+- shift_birth_date
+consistency_groups:
+- name: commercial_contact_email
+  columns:
+  - crm.referenti_commerciali.email_ref
+- name: commercial_contact_phone
+  columns:
+  - crm.referenti_commerciali.telefono_ref
+- name: customer_email
+  columns:
+  - billing.pagamenti.rif_esterno
+  - billing.solleciti.destinatario_email
+  - crm.clienti.email
+- name: customer_iban
+  columns:
+  - billing.coordinate_bancarie.iban
+- name: customer_phone
+  columns:
+  - crm.clienti.telefono
+- name: customer_tax_code
+  columns:
+  - billing.sconti.cod_rif
+  - crm.clienti.cod_fisc
+- name: employee_email
+  columns:
+  - hr.dipendenti.email_aziendale
+- name: employee_iban
+  columns:
+  - hr.buste_paga.iban_accredito
+  - hr.dipendenti.iban
+- name: employee_tax_code
+  columns:
+  - hr.dipendenti.cod_fisc

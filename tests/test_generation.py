@@ -70,25 +70,41 @@ def test_ibans_are_formally_valid_and_unique_where_constrained() -> None:
 
 
 def test_declared_foreign_keys_have_no_orphans() -> None:
-    assert fetch_one("""
+    assert (
+        fetch_one("""
         SELECT count(*) FROM information_schema.table_constraints
         WHERE constraint_type = 'FOREIGN KEY' AND table_schema IN ('crm', 'hr', 'billing')
-    """) == 12
+    """)
+        == 12
+    )
     with get_connection() as connection, connection.cursor() as cursor:
         cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
 
 
 def test_logical_relationships_are_coherent() -> None:
-    assert fetch_one("SELECT count(*) FROM billing.fatture f LEFT JOIN crm.clienti c USING (cliente_id) WHERE c.cliente_id IS NULL") == 0
-    assert fetch_one("SELECT count(*) FROM hr.reparti r LEFT JOIN hr.dipendenti d ON d.dipendente_id = r.responsabile_id WHERE d.dipendente_id IS NULL") == 0
+    assert (
+        fetch_one(
+            "SELECT count(*) FROM billing.fatture f LEFT JOIN crm.clienti c USING (cliente_id) WHERE c.cliente_id IS NULL"
+        )
+        == 0
+    )
+    assert (
+        fetch_one(
+            "SELECT count(*) FROM hr.reparti r LEFT JOIN hr.dipendenti d ON d.dipendente_id = r.responsabile_id WHERE d.dipendente_id IS NULL"
+        )
+        == 0
+    )
 
 
 def test_payroll_iban_matches_employee_iban() -> None:
-    assert fetch_one("""
+    assert (
+        fetch_one("""
         SELECT count(*) FROM hr.buste_paga b
         JOIN hr.dipendenti d USING (dipendente_id)
         WHERE b.iban_accredito <> d.iban
-    """) == 0
+    """)
+        == 0
+    )
 
 
 def test_free_text_contains_expected_synthetic_pii() -> None:
@@ -102,14 +118,27 @@ def test_false_positive_templates_use_placeholders() -> None:
 
 
 def test_trap_columns_exist_and_match_source_values() -> None:
-    assert fetch_one("""
+    assert (
+        fetch_one("""
         SELECT count(*) FROM information_schema.columns
         WHERE (table_schema, table_name, column_name) IN (
             ('billing', 'sconti', 'cod_rif'), ('billing', 'pagamenti', 'rif_esterno')
         )
-    """) == 2
-    assert fetch_one("SELECT count(*) FROM billing.sconti s LEFT JOIN crm.clienti c ON c.cod_fisc = s.cod_rif WHERE c.cliente_id IS NULL") == 0
-    assert fetch_one("SELECT count(*) FROM billing.pagamenti p LEFT JOIN crm.clienti c ON lower(c.email) = lower(p.rif_esterno) WHERE c.cliente_id IS NULL") == 0
+    """)
+        == 2
+    )
+    assert (
+        fetch_one(
+            "SELECT count(*) FROM billing.sconti s LEFT JOIN crm.clienti c ON c.cod_fisc = s.cod_rif WHERE c.cliente_id IS NULL"
+        )
+        == 0
+    )
+    assert (
+        fetch_one(
+            "SELECT count(*) FROM billing.pagamenti p LEFT JOIN crm.clienti c ON lower(c.email) = lower(p.rif_esterno) WHERE c.cliente_id IS NULL"
+        )
+        == 0
+    )
 
 
 def test_all_unique_constraints_hold() -> None:

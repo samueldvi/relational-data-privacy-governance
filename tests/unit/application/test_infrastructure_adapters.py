@@ -22,8 +22,10 @@ def test_repository_config_loader_is_the_single_yaml_entry_point(tmp_path: Path)
 
 def test_database_settings_validate_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     values = {
-        "POSTGRES_DB": "synthetic_db", "POSTGRES_USER": "synthetic_user",
-        "POSTGRES_PASSWORD": "synthetic_password", "POSTGRES_HOST": "localhost",
+        "POSTGRES_DB": "synthetic_db",
+        "POSTGRES_USER": "synthetic_user",
+        "POSTGRES_PASSWORD": "synthetic_password",
+        "POSTGRES_HOST": "localhost",
         "POSTGRES_PORT": "5432",
     }
     for name, value in values.items():

@@ -19,7 +19,7 @@ Il repository prepara concetti e controlli trasferibili verso Informatica Data P
 | Righe sintetiche sorgente / masked | 2.063 / 2.063 |
 | Regole di masking | 12 |
 | Consistency group | 9 |
-| Test automatici | 178 superati dopo drift, container e benchmark |
+| Test automatici | 181 superati con i controlli supply-chain |
 | Manifest | checksum per tabella e globale, deterministici |
 
 La suite verifica inoltre rollback completo, idempotenza con lo stesso secret,
@@ -214,7 +214,7 @@ git diff --check
 La baseline iniziale misurata sul branch di hardening è `23,6%` per i soli 14
 test unitari e `87,7%` per la suite completa iniziale di 159 test con
 PostgreSQL. Dopo il blocco schema drift, 171 test raggiungono `88,3%`; i
-controlli di container e benchmark portano la suite a 178 test. Il gate
+controlli di container, benchmark e supply-chain portano la suite a 181 test. Il gate
 versionato usa `fail_under = 87`: mantiene un margine minimo per gli
 arrotondamenti, ma fallisce in caso di regressione sostanziale rispetto alla
 baseline verificata. `coverage.xml` è generato per le integrazioni esterne e

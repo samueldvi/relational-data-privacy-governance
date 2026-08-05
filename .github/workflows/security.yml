@@ -36,26 +36,33 @@ jobs:
 
   codeql:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
     steps:
       - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@v4
         with:
           languages: python
-      - uses: github/codeql-action/analyze@v3
+      - name: Analyze source code
+        uses: github/codeql-action/analyze@v4
+        with:
+          output: codeql-results
+          upload: never
+          upload-database: false
+      - name: Retain CodeQL results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-results
+          path: codeql-results/*.sarif
+          if-no-files-found: warn
+          retention-days: 14
 
   container:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
     steps:
       - uses: actions/checkout@v4
       - run: docker build --tag privacy-pipeline:security .
       - name: Scan fixable critical and high vulnerabilities
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: privacy-pipeline:security
           format: sarif
@@ -63,7 +70,11 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: "1"
-      - uses: github/codeql-action/upload-sarif@v3
+      - name: Retain Trivy results
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: trivy-results.sarif
+          name: trivy-results
+          path: trivy-results.sarif
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,0 +1,12 @@
+version: 1
+seed: 20260804
+profiles:
+  baseline:
+    iterations: 1
+    approximate_rows: 2063
+  cumulative_20k:
+    iterations: 10
+    approximate_rows: 20630
+  cumulative_100k:
+    iterations: 49
+    approximate_rows: 101087

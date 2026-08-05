@@ -73,4 +73,5 @@ def test_security_ci_retains_results_without_requiring_code_scanning() -> None:
     assert len(trivy_revision) == 40
     assert all(character in "0123456789abcdef" for character in trivy_revision)
     assert trivy["with"]["exit-code"] == "1"
+    assert trivy["with"]["limit-severities-for-sarif"] == "true"
     assert any(step.get("uses") == "actions/upload-artifact@v4" for step in container_steps)

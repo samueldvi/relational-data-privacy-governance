@@ -29,7 +29,7 @@ jobs:
           --health-cmd "pg_isready -U privacy_benchmark_ci -d privacy_benchmark_ci"
           --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

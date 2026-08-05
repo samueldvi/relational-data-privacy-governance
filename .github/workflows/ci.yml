@@ -45,7 +45,7 @@ jobs:
           --health-retries 12
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -115,7 +115,7 @@ jobs:
       MASKING_SECRET: ci-only-synthetic-container-masking-secret-not-for-production-20260805
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build application image
         run: docker compose build privacy-pipeline

@@ -66,6 +66,7 @@ def test_pipeline_has_one_authoritative_order_and_stops_on_first_error() -> None
             Mock(),
         ),
         status=StatusService(lambda: {}),
+        drift=Mock(),
     )
     context.classification._expected_columns = 1
     ticks = iter(range(20))

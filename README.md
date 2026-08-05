@@ -19,7 +19,7 @@ Il repository prepara concetti e controlli trasferibili verso Informatica Data P
 | Righe sintetiche sorgente / masked | 2.063 / 2.063 |
 | Regole di masking | 12 |
 | Consistency group | 9 |
-| Test automatici | 159 superati nella suite finale |
+| Test automatici | 171 superati dopo l'introduzione del controllo drift |
 | Manifest | checksum per tabella e globale, deterministici |
 
 La suite verifica inoltre rollback completo, idempotenza con lo stesso secret,
@@ -90,6 +90,9 @@ lo script documentato in `scripts/validate_clean_environment.sh`; il reset non
 | `python -m src.cli mask --validate-only` | Controllo read-only dello stato masked |
 | `python -m src.cli validate` | Validazione integrata e confronto col manifest |
 | `python -m src.cli validate --check-idempotence` | Due esecuzioni equivalenti e confronto deterministico |
+| `python -m src.cli drift` | Report leggibile del drift senza modificare la baseline |
+| `python -m src.cli drift --check` | Gate CI non nullo per drift strutturale o di governance |
+| `python -m src.cli drift --write-baseline` | Aggiornamento esplicito della baseline dopo review |
 | `python -m src.cli all` | Pipeline completa, interrotta al primo errore |
 
 Ogni comando restituisce un exit code non nullo in caso di errore e stampa solo
@@ -121,6 +124,9 @@ checksum, mai valori o mapping.
 - Gli schemi sorgente sono verificati prima e dopo il masking e restano immutati.
 - `billing.pagamenti.riferimento_bancario` resta `Dubbio`: D-008 autorizza solo
   `redact_detected_patterns`, con rischio residuo esplicitamente accettato.
+- `config/schema_baseline.yml` versiona struttura, constraint, relazioni logiche
+  approvate, classificazioni, regole e consistency group. La CI esegue solo il
+  confronto read-only; l'aggiornamento richiede sempre `--write-baseline`.
 
 Il repository è un ambiente didattico e dimostrativo. Non deve elaborare dati
 reali senza threat model, gestione professionale delle chiavi, controlli IAM,
@@ -172,6 +178,7 @@ connessione al database o esecuzione del masking.
 ```bash
 python -m src.cli status
 python -m src.cli all
+python -m src.cli drift --check
 ruff check .
 ruff format --check .
 mypy src
@@ -183,8 +190,9 @@ python scripts/check_repository_safety.py
 git diff --check
 ```
 
-La baseline misurata sul branch di hardening è `23,6%` per i soli 14 test
-unitari e `87,7%` per la suite completa di 159 test con PostgreSQL. Il gate
+La baseline iniziale misurata sul branch di hardening è `23,6%` per i soli 14
+test unitari e `87,7%` per la suite completa iniziale di 159 test con
+PostgreSQL. Dopo il blocco schema drift, 171 test raggiungono `88,3%`. Il gate
 versionato usa `fail_under = 87`: mantiene un margine minimo per gli
 arrotondamenti, ma fallisce in caso di regressione sostanziale rispetto alla
 baseline verificata. `coverage.xml` è generato per le integrazioni esterne e

@@ -8,6 +8,7 @@ from src.application.services import (
     InventoryService,
     MaskingService,
     ProfilingService,
+    SchemaDriftService,
     StatusService,
     ValidationService,
 )
@@ -22,3 +23,4 @@ class ApplicationContext:
     masking: MaskingService
     validation: ValidationService
     status: StatusService
+    drift: SchemaDriftService

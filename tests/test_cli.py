@@ -24,6 +24,7 @@ def _context(**services: object) -> SimpleNamespace:
         "masking": Mock(),
         "validation": Mock(),
         "status": Mock(),
+        "drift": Mock(),
     }
     defaults.update(services)
     return SimpleNamespace(**defaults)
@@ -31,7 +32,14 @@ def _context(**services: object) -> SimpleNamespace:
 
 @pytest.mark.parametrize(
     "arguments",
-    [["--help"], ["generate", "--help"], ["mask", "--help"], ["validate", "--help"], ["all", "--help"]],
+    [
+        ["--help"],
+        ["generate", "--help"],
+        ["mask", "--help"],
+        ["validate", "--help"],
+        ["drift", "--help"],
+        ["all", "--help"],
+    ],
 )
 def test_help_is_available(arguments: list[str], capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as error:
@@ -48,7 +56,28 @@ def test_module_is_executable_from_repository_root() -> None:
         check=True,
         timeout=10,
     )
-    assert "{generate,inventory,profile,classify,status,mask,validate,all}" in result.stdout
+    assert "{generate,inventory,profile,classify,status,drift,mask,validate,all}" in result.stdout
+
+
+def test_drift_modes_are_read_only_unless_write_is_explicit(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    drift = Mock()
+    drift.report.return_value = SimpleNamespace(has_drift=False, items=(), count=lambda _kind: 0)
+    drift.write_baseline.return_value = {
+        "schemas": 3,
+        "tables": 20,
+        "columns": 109,
+        "constraints": 57,
+        "logical_relationships": 2,
+    }
+    monkeypatch.setattr(cli_main, "build_application", lambda: _context(drift=drift))
+    assert cli.main(["drift"]) == 0
+    assert cli.main(["drift", "--check"]) == 0
+    drift.write_baseline.assert_not_called()
+    assert cli.main(["drift", "--write-baseline"]) == 0
+    drift.write_baseline.assert_called_once_with()
+    assert "columns=109" in capsys.readouterr().out
 
 
 def test_generate_reports_only_aggregate_counts(

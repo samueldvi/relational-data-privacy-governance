@@ -73,7 +73,7 @@ def test_pipeline_order_has_one_authoritative_definition() -> None:
 
 
 @pytest.mark.parametrize(
-    "command", ("generate", "inventory", "profile", "classify", "mask", "validate", "status", "all")
+    "command", ("generate", "inventory", "profile", "classify", "drift", "mask", "validate", "status", "all")
 )
 def test_public_cli_commands_remain_compatible(command: str) -> None:
     result = subprocess.run(

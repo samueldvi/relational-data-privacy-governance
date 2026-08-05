@@ -79,6 +79,9 @@ jobs:
               --set ON_ERROR_STOP=1 --file "$sql_file"
           done
 
+      - name: Check schema and governance drift
+        run: python -m src.cli drift --check
+
       - name: Run end-to-end pipeline
         run: python -m src.cli all
 

@@ -59,3 +59,7 @@ class UnresolvableCollisionError(MaskingError):
 
 class UnsafeRepositoryError(PrivacyGovernanceError):
     pass
+
+
+class SchemaDriftError(PrivacyGovernanceError):
+    pass

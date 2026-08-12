@@ -1,5 +1,5 @@
 -r requirements.txt
-coverage==7.15.3
+coverage==7.15.4
 cyclonedx-bom==7.1.0
 mypy==2.3.0
 pip-audit==2.9.0

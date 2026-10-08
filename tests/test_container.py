@@ -14,7 +14,8 @@ def test_dockerfile_is_pinned_minimal_and_non_root() -> None:
     assert "USER 10001:10001" in dockerfile
     assert "requirements-runtime.txt" in dockerfile
     assert "requirements-dev.txt" not in dockerfile
-    assert "apt-get" not in dockerfile
+    assert "apt-get upgrade --yes" in dockerfile
+    assert "rm -rf /var/lib/apt/lists/*" in dockerfile
     assert "MASKING_SECRET" not in dockerfile
     assert "POSTGRES_PASSWORD" not in dockerfile
 

@@ -21,8 +21,10 @@ maintainer.
 
 Sono in scope pipeline Python, configurazioni di governance, container e
 workflow versionati. Il PostgreSQL locale, Docker Desktop, runner GitHub e
-piattaforme Informatica non sono gestiti da questo repository. Il progetto è
-didattico e non è autorizzato a trattare dati reali.
+piattaforme Informatica non sono gestiti da questo repository. L'implementazione
+corrente è un proof of concept tecnico e non è autorizzata a trattare dati reali
+senza una valutazione di sicurezza, privacy e governance specifica
+dell'organizzazione adottante.
 
 I report distinguono Critical, High e Medium. Un finding senza fix disponibile
 viene conservato come artifact e valutato come rischio accettato o falso

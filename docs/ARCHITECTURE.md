@@ -87,3 +87,7 @@ Top-level modules such as `masking.py`, `masking_manifest.py` and `db.py` remain
 - The current volume validates correctness, not enterprise throughput.
 - Production use requires managed key storage, IAM, audit transport, monitoring, legal review and data-owner approval.
 - Future work can replace each compatibility workflow callable with a native service implementation over `src/ports`, then remove the corresponding facade after parity tests prove identical table checksums.
+
+## Product evaluation summary
+
+The architecture preserves one transaction boundary while separating presentation, orchestration, pure policy and infrastructure. Source schemas are `crm`, `hr` and `billing`; protected targets are `masked_crm`, `masked_hr` and `masked_billing`. Technical keys remain unchanged under registry authorization so relationships survive, while direct identifiers use rules and namespace-scoped consistency groups. Checksums prove repeatability, not confidentiality. The current implementation is a validated B2B proof of concept; real-data operation, production IAM, managed keys, operational controls, and legal compliance remain outside its verified scope.

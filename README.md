@@ -2,87 +2,120 @@
 
 [![CI](https://github.com/samueldvi/relational-data-privacy-governance/actions/workflows/ci.yml/badge.svg)](https://github.com/samueldvi/relational-data-privacy-governance/actions/workflows/ci.yml)
 
-## TL;DR
+Relational Data Privacy Governance is a validated B2B proof of concept for discovering, classifying, and protecting personally identifiable information across interconnected PostgreSQL databases without breaking the relationships needed by development, testing, and analytics teams.
 
-Pipeline locale Python 3.12 e PostgreSQL 16 per generare dati sintetici, inventariare e classificare PII e creare copie masked relazionalmente coerenti.
-Il risultato comprende 20 tabelle sorgente e 20 masked, governate da un registry completo di 109 colonne.
-HMAC-SHA-256 namespaced, caricamento transazionale, rollback, idempotenza e checksum deterministici rendono il processo verificabile.
-Il repository prepara concetti e controlli trasferibili verso Informatica Data Privacy Management, senza dichiarare un'integrazione diretta con la piattaforma.
+It is designed for technical evaluation by enterprise data teams, consulting firms, platform architects, security stakeholders, and privacy engineering functions. The current release demonstrates a complete local workflow on synthetic CRM, HR, and Billing data. It is not presented as a deployed enterprise product, a managed service, or evidence of regulatory compliance.
 
-## Risultati verificabili
+## Business value
 
-| Evidenza | Risultato |
+Organizations frequently need representative relational datasets outside production. Conventional field-by-field masking can break joins, unique constraints, and cross-system identity consistency. Copying production data unchanged creates unnecessary exposure. This proof of concept demonstrates a policy-driven middle path:
+
+- inventory database structure and relationships;
+- combine metadata and value-pattern evidence to classify PII;
+- apply deterministic, namespace-scoped pseudonymization;
+- preserve approved relational and analytical behavior;
+- validate protected outputs before commit;
+- produce aggregate audit evidence without exporting source PII or mappings.
+
+## Verified reference implementation
+
+The figures below were reproduced locally on 2026-10-08 at Git revision `6b199e1` using Python 3.12.10 and PostgreSQL 16. Commands and environmental constraints are recorded in [testing and validation](docs/testing_and_validation.md).
+
+| Evidence | Verified result |
 |---|---:|
-| Schemi sorgente | 3 (`crm`, `hr`, `billing`) |
-| Tabelle sorgente / masked | 20 / 20 |
-| Colonne inventariate e classificate | 109 |
-| Righe sintetiche sorgente / masked | 2.063 / 2.063 |
-| Regole di masking | 12 |
-| Consistency group | 9 |
-| Test automatici | 181 superati con i controlli supply-chain |
-| Manifest | checksum per tabella e globale, deterministici |
+| Source schemas | 3 (`crm`, `hr`, `billing`) |
+| Source / protected tables | 20 / 20 |
+| Inventoried and classified columns | 109 |
+| Synthetic source / protected rows | 2,063 / 2,063 |
+| Masking rules | 12 |
+| Cross-table consistency groups | 9 |
+| Automated tests | 182 passed |
+| Branch-aware coverage | 88.3% |
+| Schema drift | 0 findings |
+| Deterministic idempotence | verified |
 
-La suite verifica inoltre rollback completo, idempotenza con lo stesso secret,
-output differenti con secret differenti, invarianti delle sorgenti, constraint,
-relazioni dichiarate e logiche e assenza di PII rilevabile dalle regole note.
+These results establish the behavior of the synthetic reference workload only. They do not establish performance, detection accuracy, security, or compliance on an organization's real data.
 
-## Architettura
+## Architecture
 
 ```mermaid
 flowchart LR
-    CLI["CLI"] --> APP["Application services"]
-    APP --> DOMAIN["Pure domain"]
-    APP --> PORTS["Repository ports"]
-    INFRA["Infrastructure adapters"] --> PORTS
+    CLI[CLI] --> APP[Application services]
+    APP --> DOMAIN[Pure privacy domain]
+    APP --> PORTS[Repository ports]
+    INFRA[Infrastructure adapters] --> PORTS
     INFRA --> DOMAIN
-    INFRA --> PG[("PostgreSQL 16")]
-    INFRA --> FILES["YAML / CSV / JSON"]
+    INFRA --> PG[(PostgreSQL 16)]
+    INFRA --> FILES[YAML / CSV / JSON]
 ```
 
-La fase Synthetic Data alimenta il Privacy Metadata Registry e le successive
-validazioni tramite il flusso applicativo. La CLI chiama servizi applicativi iniettati dal composition root. L'application
-layer definisce l'ordine end-to-end una sola volta; il dominio contiene regole
-pure e l'infrastruttura incapsula PostgreSQL, configurazione e serializzazione.
-I dettagli e i vincoli verificati sono in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+The solution is a modular monolith. A single deployment retains a clear transaction boundary for protected-schema replacement while domain, application, presentation, and infrastructure concerns remain separated and contract-tested. The authoritative flow is:
 
-### Architecture decisions
+```text
+generate → inventory → profile → classify → mask → validate
+```
 
-- **Modular monolith:** un solo deploy mantiene semplice la transazione masked e
-  non introduce coordinamento distribuito senza un reale bisogno di scaling.
-- **Dependency inversion:** application usa porte; gli adapter concreti vengono
-  collegati solo da `src/bootstrap.py`.
-- **Pure domain:** normalizzazione, HMAC, collisioni, redaction e checksum non
-  leggono database, file o variabili d'ambiente.
-- **Test boundaries:** test unitari domain/application non richiedono PostgreSQL;
-  integrazione, contract architetturali e sicurezza restano separati.
+See [architecture](docs/ARCHITECTURE.md) and the [technical white paper](docs/technical_whitepaper.md) for the rationale and trust boundaries.
+
+## Privacy transformation model
+
+The implementation uses versioned YAML policy for data domains, the PII registry, masking rules, cross-table consistency groups, ambiguous-field decisions, and schema baseline.
+
+- Direct identifiers use HMAC-SHA-256 with an external secret, explicit normalization, and namespace separation.
+- Format-aware rules generate formally valid synthetic Italian tax codes and non-routable Italian IBANs.
+- Approved technical keys remain unchanged to preserve primary and foreign key relationships.
+- Date shifting, address replacement, conditional contact masking, and multi-pattern free-text redaction cover additional domains.
+- Mappings exist only in memory during a batch and are not persisted.
+- Ambiguous non-null data blocks execution unless an explicit reviewed strategy exists.
+
+This is pseudonymization, not anonymization. Equality is intentionally retained inside approved consistency groups, and key compromise or auxiliary data may enable linkage.
 
 ## Quick start
 
-Prerequisiti: Docker con Compose, Python 3.12 e una shell POSIX. Dalla root:
+Prerequisites: Python 3.12, Docker with Compose, and a POSIX shell.
 
 ```bash
 cp .env.example .env
-# Sostituire in .env i placeholder con valori locali non riutilizzati altrove.
-python -m venv .venv
+# Replace all placeholders with local-only values.
+python3.12 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements-dev.txt
-docker compose up -d
+python -m pip install --requirement requirements-dev.txt
+docker compose up -d --wait postgres
 python -m src.cli all
 ```
 
-Il container inizializza gli script `sql/00_...`–`sql/05_...` solo alla prima
-creazione del volume. Per una validazione controllata da ambiente pulito usare
-lo script documentato in `scripts/validate_clean_environment.sh`; il reset non
-è mai implicito.
+PostgreSQL initialization scripts run automatically only when the Compose data volume is new. The repository never resets the volume implicitly. For a controlled clean-room validation, use `scripts/validate_clean_environment.sh` after reviewing its explicit cleanup behavior.
 
-### Container applicativo
+If the default host port is occupied, use the same override for Compose and each local command:
 
-L'immagine applicativa usa Python 3.12 slim pinning per digest, installa solo le
-dipendenze runtime e opera come UID/GID `10001`. Il root filesystem è read-only;
-solo `/tmp`, `output/` e le copie effimere di `config/` e `docs/` sono scrivibili.
-`.env`, cache, test e output locali sono esclusi dal build context. I secret sono
-passati solo a runtime da Compose.
+```bash
+POSTGRES_PORT=55433 docker compose up -d --wait postgres
+POSTGRES_PORT=55433 python -m src.cli all
+```
+
+## Command-line interface
+
+| Command | Purpose |
+|---|---|
+| `python -m src.cli status` | Report aggregate database, registry, manifest, and Git status |
+| `python -m src.cli generate --seed 20260804` | Generate the deterministic synthetic workload |
+| `python -m src.cli inventory` | Export structural inventory and approved relationships |
+| `python -m src.cli profile` | Produce aggregate profiling with redacted samples |
+| `python -m src.cli classify` | Build the YAML registry, catalog, and classification report |
+| `python -m src.cli mask --dry-run` | Validate preconditions and show a no-write execution plan |
+| `python -m src.cli mask` | Create and load protected schemas transactionally |
+| `python -m src.cli mask --validate-only` | Validate the existing protected database without writes |
+| `python -m src.cli validate` | Run integrated validation against the manifest |
+| `python -m src.cli validate --check-idempotence` | Repeat the load and compare deterministic results |
+| `python -m src.cli drift --check` | Fail on structural or governance drift |
+| `python -m src.cli drift --write-baseline` | Explicitly update the reviewed baseline |
+| `python -m src.cli all` | Run the complete fail-fast workflow |
+
+Commands return non-zero on controlled failure. Normal output contains aggregate counts, status, duration, validation results, and checksums—not credentials, source records, pseudonyms, or mapping tables.
+
+## Container execution
+
+The application image uses Python 3.12 slim with a pinned digest, installs runtime dependencies only, runs as UID/GID `10001`, and uses a read-only root filesystem. Writable locations are limited to temporary and generated-output volumes.
 
 ```bash
 docker compose build privacy-pipeline
@@ -90,144 +123,71 @@ docker compose run --rm privacy-pipeline python -m src.cli status
 docker compose run --rm privacy-pipeline python -m src.cli all
 ```
 
-Il servizio attende l'healthcheck PostgreSQL. `pipeline_output` conserva solo
-gli artefatti rigenerabili; `docker compose down --volumes` rimuove database e
-output containerizzati quando è richiesto un reset esplicito.
-
-## CLI
-
-| Comando | Funzione |
-|---|---|
-| `python -m src.cli status` | Stato aggregato di database, registry, manifest e branch |
-| `python -m src.cli generate --seed 20260804` | Generazione deterministica delle 2.063 righe sintetiche |
-| `python -m src.cli inventory` | Inventario e relazioni in `output/*.csv` |
-| `python -m src.cli profile` | Profiling aggregato e campioni redatti |
-| `python -m src.cli classify` | Registry YAML, catalogo CSV e classificazione Markdown |
-| `python -m src.cli mask --dry-run` | Precondizioni e piano senza scritture |
-| `python -m src.cli mask` | Creazione e caricamento transazionale degli schemi masked |
-| `python -m src.cli mask --validate-only` | Controllo read-only dello stato masked |
-| `python -m src.cli validate` | Validazione integrata e confronto col manifest |
-| `python -m src.cli validate --check-idempotence` | Due esecuzioni equivalenti e confronto deterministico |
-| `python -m src.cli drift` | Report leggibile del drift senza modificare la baseline |
-| `python -m src.cli drift --check` | Gate CI non nullo per drift strutturale o di governance |
-| `python -m src.cli drift --write-baseline` | Aggiornamento esplicito della baseline dopo review |
-| `python -m src.cli all` | Pipeline completa, interrotta al primo errore |
-
-Ogni comando restituisce un exit code non nullo in caso di errore e stampa solo
-conteggi, stati, durate, statistiche e checksum. Non stampa credenziali,
-mapping, pseudonimi o record completi.
-
-## Componenti e output
-
-- `src/cli/`: parser e comandi di presentazione compatibili;
-- `src/application/`: servizi e orchestrazione end-to-end;
-- `src/domain/`: modelli e logica privacy deterministica pura;
-- `src/ports/`: contratti per database, configurazione, secret, clock e artefatti;
-- `src/infrastructure/`: adapter PostgreSQL, YAML/CSV/JSON, ambiente e tempo;
-- `src/bootstrap.py`: composition root;
-- `src/apply_masking.py`, `src/inventory.py`, `src/profile_columns.py` e
-  `src/classify.py`: entry point compatibili durante la migrazione incrementale.
-
-Gli artefatti rigenerabili sono salvati in `output/` e ignorati da Git. Il
-manifest contiene metadati aggregati, statistiche di collisione, controlli e
-checksum, mai valori o mapping.
-
-## Sicurezza e governance
-
-- Il dataset è interamente sintetico e usa domini e numerazioni riservati ai test.
-- `.env` è escluso da Git; segreto di masking e password restano esterni al codice.
-- Le pseudonimizzazioni usano HMAC-SHA-256 con namespace separati per dominio e soggetto.
-- I mapping vivono solo in memoria durante il batch e non vengono persistiti.
-- Campioni di profiling e testi liberi sono redatti prima della scrittura degli output.
-- Gli schemi sorgente sono verificati prima e dopo il masking e restano immutati.
-- `billing.pagamenti.riferimento_bancario` resta `Dubbio`: D-008 autorizza solo
-  `redact_detected_patterns`, con rischio residuo esplicitamente accettato.
-- `config/schema_baseline.yml` versiona struttura, constraint, relazioni logiche
-  approvate, classificazioni, regole e consistency group. La CI esegue solo il
-  confronto read-only; l'aggiornamento richiede sempre `--write-baseline`.
-
-Il repository è un ambiente didattico e dimostrativo. Non deve elaborare dati
-reali senza threat model, gestione professionale delle chiavi, controlli IAM,
-valutazione legale, monitoraggio e revisione del data owner.
-
-## Limiti
-
-- La discovery è regex e contestuale; non include Named Entity Recognition.
-- Codici fiscali e IBAN sono formalmente validi, non verificati anagraficamente o bancariamente.
-- Le prestazioni sono validate sul volume locale di 2.063 righe, non su scala enterprise.
-- Il riferimento bancario eterogeneo può contenere valori sensibili non riconosciuti dalle regex.
-- Non è disponibile un processo di re-identificazione: il mapping non viene conservato.
-- Funzioni, nomi, licenze e capacità di Informatica devono essere verificati su un ambiente autorizzato.
-- I benchmark 20k/100k sono workload cumulativi ripetuti, non prove su un singolo database di quella dimensione;
-  metodologia e risultati locali sono in [`docs/PERFORMANCE_BASELINE.md`](docs/PERFORMANCE_BASELINE.md).
-
-## Trasferimento verso Informatica
-
-Il progetto implementa localmente inventory, profiling, data domain, policy,
-consistent masking, target masked, validazioni e audit tecnico. Questi concetti
-costituiscono una base di analisi, non la prova che il repository utilizzi
-Informatica direttamente. Il mapping, le verifiche di piattaforma e il piano di
-adozione sono descritti in
-[`docs/TRASFERIMENTO_INFORMATICA.md`](docs/TRASFERIMENTO_INFORMATICA.md).
-
-## Demo web
-
-Non è inclusa una web app. La valutazione in
-[`docs/WEB_DEMO_FEASIBILITY.md`](docs/WEB_DEMO_FEASIBILITY.md) raccomanda una
-demo statica alimentata esclusivamente da JSON aggregati e revisionati, senza
-connessione al database o esecuzione del masking.
-
-## Struttura del repository
-
-```text
-.
-├── .github/workflows/       # CI PostgreSQL end-to-end
-├── config/                  # domini, registry, regole, gruppi e decisioni operative
-├── docs/                    # classificazione, decision log e documentazione tecnica
-├── scripts/                 # validazione pulita e controlli di sicurezza
-├── sql/                     # inizializzazione PostgreSQL ordinata
-├── src/                     # pipeline e CLI Python
-├── tests/                   # test unitari, integrazione, CLI, CI e sicurezza
-├── compose.yml
-├── requirements-runtime.txt  # dipendenze minime dell'immagine
-├── requirements.txt          # runtime + test
-└── README.md
-```
-
-## Verifica locale
+## Verification
 
 ```bash
-python -m src.cli status
 python -m src.cli all
 python -m src.cli drift --check
-ruff check .
-ruff format --check .
-mypy src
-coverage run -m pytest -q
-coverage report
-coverage xml
-pre-commit run --all-files
+python -m src.cli validate --check-idempotence
+python -m coverage run -m pytest -q
+python -m coverage report
+python -m mypy src
+python -m ruff check .
+python -m ruff format --check .
+python -m pip_audit
 python scripts/check_repository_safety.py
 git diff --check
 ```
 
-La baseline iniziale misurata sul branch di hardening è `23,6%` per i soli 14
-test unitari e `87,7%` per la suite completa iniziale di 159 test con
-PostgreSQL. Dopo il blocco schema drift, 171 test raggiungono `88,3%`; i
-controlli di container, benchmark e supply-chain portano la suite a 181 test. Il gate
-versionato usa `fail_under = 87`: mantiene un margine minimo per gli
-arrotondamenti, ma fallisce in caso di regressione sostanziale rispetto alla
-baseline verificata. `coverage.xml` è generato per le integrazioni esterne e
-non è versionato.
+Database-dependent tests run against PostgreSQL; they are not mocked or silently skipped. See [testing and validation](docs/testing_and_validation.md) for the evidence boundary.
 
-Le decisioni effettivamente approvate sono versionate in
-[`docs/DECISION_LOG.md`](docs/DECISION_LOG.md); le regole sono descritte in
-[`docs/REGOLE_MASCHERAMENTO.md`](docs/REGOLE_MASCHERAMENTO.md).
+## Security and governance boundaries
 
-## Release
+- The bundled dataset is synthetic and uses reserved test domains and deliberately non-routable formats.
+- `.env` and generated outputs are excluded from version control.
+- Database values are parameterized and dynamic identifiers use `psycopg.sql.Identifier`.
+- Protected-schema loading is transactional and validates target names, constraints, relationships, row counts, source invariants, and canonical checksums.
+- Free-text redaction is pattern-based and can miss unknown sensitive structures.
+- Secrets are supplied through environment variables; there is no production key-management integration or rotation service.
+- The current Compose topology uses one database role and does not implement enterprise authentication, authorization, tenant isolation, or audit-log transport.
+- No direct Informatica Data Privacy Management integration is included. Existing material describes conceptual portability only.
 
-La baseline `v1.0.0` è descritta nelle
-[`release notes`](docs/RELEASE_NOTES_v1.0.0.md) e nel
-[`CHANGELOG.md`](CHANGELOG.md). I gate verificati e quelli ancora richiesti
-prima della pubblicazione sono registrati nella
-[`release checklist`](docs/RELEASE_CHECKLIST.md).
+Review [SECURITY.md](SECURITY.md), the [technical audit](docs/technical_audit.md), and the [commercial readiness assessment](docs/commercial_readiness.md) before any pilot evaluation.
+
+## Product maturity
+
+The repository is suitable for a controlled technical proof-of-concept evaluation using synthetic or explicitly approved non-production data. It is not yet suitable for production workloads or unsupervised processing of real personal data.
+
+Major gaps before a controlled customer pilot include authenticated access, role-based authorization, managed secrets, immutable operational audit logs, deployment packaging, monitoring and alerting, backup/recovery procedures, licensing decisions, support ownership, and validation on representative authorized datasets. The prioritized path from proof of concept to pilot and enterprise product is documented in [commercial readiness](docs/commercial_readiness.md).
+
+## Documentation
+
+- [Technical white paper](docs/technical_whitepaper.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Data governance workflow](docs/data_governance_workflow.md)
+- [Testing and validation](docs/testing_and_validation.md)
+- [Technical audit](docs/technical_audit.md)
+- [Commercial readiness and roadmap](docs/commercial_readiness.md)
+- [Limitations and future work](docs/limitations_and_future_work.md)
+- [Masking rules](docs/REGOLE_MASCHERAMENTO.md)
+- [Decision log](docs/DECISION_LOG.md)
+
+## Repository structure
+
+```text
+.
+├── .github/workflows/       # CI, dependency, code, and container checks
+├── config/                  # Domains, registry, rules, consistency groups, baseline
+├── docs/                    # Product, architecture, governance, and validation documentation
+├── scripts/                 # Clean validation and repository-safety controls
+├── sql/                     # Ordered PostgreSQL initialization
+├── src/                     # CLI, application, domain, ports, and infrastructure
+├── tests/                   # Unit, contract, integration, container, and security tests
+├── compose.yml
+├── Dockerfile
+└── requirements*.txt
+```
+
+## Scope statement
+
+This repository provides a technical reference implementation and evidence package for evaluating relational privacy-governance controls. Productization, legal qualification, organizational process, and environment-specific risk acceptance remain the responsibility of the adopting organization.
